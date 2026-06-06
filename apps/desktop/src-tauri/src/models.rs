@@ -64,6 +64,7 @@ pub struct ReadinessReport {
     pub feature_spec_id: Option<String>,
     pub git: Option<GitContext>,
     pub verdict: String,
+    pub verdict_explanation: Option<String>,
     pub diff_summary: DiffSummary,
     pub summary: CheckSummary,
     pub checks: Vec<CheckResult>,

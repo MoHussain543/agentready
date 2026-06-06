@@ -3,7 +3,7 @@ mod models;
 mod storage;
 
 use models::{EngineRequest, FeatureSpec, ReadinessReport};
-use storage::{CurrentSession, RepoSessionState};
+use storage::{CurrentSession, ReportHistoryEntry, RepoSessionState};
 
 #[tauri::command]
 fn run_readiness(request: EngineRequest) -> Result<ReadinessReport, String> {
@@ -41,6 +41,21 @@ fn set_test_command(
     storage::set_test_command(&repo_path, command)
 }
 
+#[tauri::command]
+fn save_report(repo_path: String, report: ReadinessReport) -> Result<CurrentSession, String> {
+    storage::save_report(&repo_path, report)
+}
+
+#[tauri::command]
+fn load_latest_report(repo_path: String) -> Result<Option<ReadinessReport>, String> {
+    storage::load_latest_report(&repo_path)
+}
+
+#[tauri::command]
+fn list_reports(repo_path: String) -> Result<Vec<ReportHistoryEntry>, String> {
+    storage::list_reports(&repo_path)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -50,7 +65,10 @@ pub fn run() {
             save_feature_session,
             load_repo_session,
             record_readiness_run,
-            set_test_command
+            set_test_command,
+            save_report,
+            load_latest_report,
+            list_reports
         ])
         .run(tauri::generate_context!())
         .expect("error while running AgentReady desktop");

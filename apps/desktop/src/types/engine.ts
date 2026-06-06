@@ -63,6 +63,7 @@ export interface ReadinessReportWire {
   featureSpecId?: string;
   git?: GitContext;
   verdict: Verdict;
+  verdictExplanation?: string;
   diffSummary: DiffSummary;
   summary: CheckSummary;
   checks: CheckResult[];

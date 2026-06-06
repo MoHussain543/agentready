@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import type { Verdict } from "../types";
+import type { ReadinessReport, Verdict } from "../types";
 import type { FeatureSpec } from "../types/engine";
 
 export interface CurrentSession {
@@ -22,6 +22,14 @@ export interface CurrentSession {
 export interface RepoSessionState {
   session: CurrentSession;
   featureSpec: FeatureSpec | null;
+  latestReport: ReadinessReport | null;
+}
+
+export interface ReportHistoryEntry {
+  fileName: string;
+  path: string;
+  generatedAt: string;
+  verdict: Verdict;
 }
 
 export async function initRepoStorage(
@@ -85,6 +93,44 @@ export async function setTestCommand(
     });
   } catch (error) {
     throw new Error(formatError(error, "Failed to save the test command."));
+  }
+}
+
+export async function saveReport(
+  repoPath: string,
+  report: ReadinessReport,
+): Promise<CurrentSession> {
+  try {
+    return await invoke<CurrentSession>("save_report", {
+      repoPath: repoPath.trim(),
+      report,
+    });
+  } catch (error) {
+    throw new Error(formatError(error, "Failed to save the readiness report."));
+  }
+}
+
+export async function loadLatestReport(
+  repoPath: string,
+): Promise<ReadinessReport | null> {
+  try {
+    return await invoke<ReadinessReport | null>("load_latest_report", {
+      repoPath: repoPath.trim(),
+    });
+  } catch (error) {
+    throw new Error(formatError(error, "Failed to load the latest report."));
+  }
+}
+
+export async function listReports(
+  repoPath: string,
+): Promise<ReportHistoryEntry[]> {
+  try {
+    return await invoke<ReportHistoryEntry[]>("list_reports", {
+      repoPath: repoPath.trim(),
+    });
+  } catch (error) {
+    throw new Error(formatError(error, "Failed to list saved reports."));
   }
 }
 

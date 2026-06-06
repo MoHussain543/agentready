@@ -53,6 +53,7 @@ class ModelSerializationTest {
 
         assertEquals(report, restored);
         assertTrue(json.contains("\"verdict\":\"NEEDS_REVIEW\""));
+        assertTrue(json.contains("\"verdictExplanation\""));
         assertTrue(json.contains("\"totalChangedLines\":42"));
     }
 
@@ -127,6 +128,7 @@ class ModelSerializationTest {
                 UUID.fromString("0b11d4e5-2b3f-4f7f-8b14-3f7d8f4b8e1f"),
                 new GitContext("main", "abc1234", true, 1, 0),
                 Verdict.NEEDS_REVIEW,
+                "No blocking issues were found, but some changes need review.",
                 diffSummary,
                 new CheckSummary(1, 1, 0, 0, 2),
                 List.of(

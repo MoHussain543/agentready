@@ -263,6 +263,71 @@ button.secondary {
   width: auto;
 }
 
+.verdict-explanation {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  color: #3f3f46;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.copy-button {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+}
+
+.latest-report-card .card-header {
+  margin-bottom: 0.75rem;
+}
+
+.latest-report-card .meta {
+  margin: 0.25rem 0 0;
+}
+
+.saved-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: #52525b;
+}
+
+.info-card {
+  background: #fafafa;
+}
+
+.info-list {
+  margin: 0.5rem 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.history-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.verdict-pill {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+}
+
 .stat-line {
   margin: 0.75rem 0 0;
   color: #52525b;

@@ -23,6 +23,7 @@ import io.agentready.engine.model.ReadinessReport;
 import io.agentready.engine.model.TestResult;
 import io.agentready.engine.model.TestResultStatus;
 import io.agentready.engine.model.Verdict;
+import io.agentready.engine.report.RepairPromptBuilder;
 import io.agentready.engine.report.VerdictPolicy;
 import io.agentready.engine.rules.Rule;
 import io.agentready.engine.rules.RuleContext;
@@ -179,9 +180,10 @@ public final class ReadinessRunner implements EngineHandler {
         CheckSummary summary = new CheckSummary(pass, warn, fail, skip, checks.size());
         DiffSummary diffSummary = DiffSummary.fromChangedFiles(changedFiles, changedLines);
         Verdict verdict = VerdictPolicy.fromChecks(checks);
+        String verdictExplanation = VerdictPolicy.explain(verdict);
 
         FeatureSpec spec = request.featureSpec();
-        String repairPrompt = buildRepairPrompt(spec, findings);
+        String repairPrompt = RepairPromptBuilder.build(spec, verdict, findings, testResult);
 
         return new ReadinessReport(
                 "1.0",
@@ -194,6 +196,7 @@ public final class ReadinessRunner implements EngineHandler {
                 spec != null ? spec.id() : null,
                 gitContext,
                 verdict,
+                verdictExplanation,
                 diffSummary,
                 summary,
                 checks,
@@ -244,27 +247,5 @@ public final class ReadinessRunner implements EngineHandler {
                 .distinct()
                 .toList();
         return new Finding(check.id(), severity, check.message(), paths);
-    }
-
-    private static String buildRepairPrompt(FeatureSpec spec, List<Finding> findings) {
-        StringBuilder builder = new StringBuilder();
-        if (spec != null) {
-            builder.append("Feature: ").append(spec.title()).append("\n\n");
-        }
-        if (findings.isEmpty()) {
-            builder.append("All baseline checks passed. No blocking issues detected.");
-            return builder.toString();
-        }
-        builder.append("Please address the following before committing:\n");
-        for (Finding finding : findings) {
-            builder.append("- [").append(finding.severity()).append("] ")
-                    .append(finding.checkId()).append(": ").append(finding.message());
-            if (finding.paths() != null && !finding.paths().isEmpty()) {
-                builder.append(" (").append(String.join(", ", finding.paths())).append(")");
-            }
-            builder.append("\n");
-        }
-        builder.append("\nRe-run AgentReady after applying fixes.");
-        return builder.toString();
     }
 }

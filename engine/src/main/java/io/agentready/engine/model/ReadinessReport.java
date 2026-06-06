@@ -15,6 +15,7 @@ public record ReadinessReport(
         UUID featureSpecId,
         GitContext git,
         Verdict verdict,
+        String verdictExplanation,
         DiffSummary diffSummary,
         CheckSummary summary,
         List<CheckResult> checks,

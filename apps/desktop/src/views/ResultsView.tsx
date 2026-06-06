@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { VerdictBadge } from "../components/VerdictBadge";
+import type { ReportHistoryEntry } from "../lib/storage";
 import type { FeatureSessionInput, ReadinessReport } from "../types";
 
 interface ResultsViewProps {
   repoPath: string;
   session: FeatureSessionInput;
   report: ReadinessReport;
+  history: ReportHistoryEntry[];
+  latestReportPath: string | null;
   isRunning: boolean;
   error: string | null;
   onBack: () => void;
@@ -15,11 +19,25 @@ export function ResultsView({
   repoPath,
   session,
   report,
+  history,
+  latestReportPath,
   isRunning,
   error,
   onBack,
   onRerun,
 }: ResultsViewProps) {
+  const [copied, setCopied] = useState(false);
+
+  const copyRepairPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(report.repairPrompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   return (
     <section className="view view-wide">
       <header className="view-header">
@@ -28,6 +46,9 @@ export function ResultsView({
           <h1>{session.title}</h1>
           <VerdictBadge verdict={report.verdict} />
         </div>
+        {report.verdictExplanation && (
+          <p className="verdict-explanation">{report.verdictExplanation}</p>
+        )}
         <p className="meta">
           Generated {new Date(report.generatedAt).toLocaleString()} ·{" "}
           {report.checkSuite}
@@ -35,6 +56,11 @@ export function ResultsView({
           {" · "}engine{" "}
           {report.engineVersion}
         </p>
+        {latestReportPath && (
+          <p className="saved-note">
+            Saved locally to <code>{latestReportPath}</code>
+          </p>
+        )}
       </header>
 
       {error && (
@@ -145,9 +171,45 @@ export function ResultsView({
       )}
 
       <div className="card">
-        <h2>Repair prompt</h2>
+        <div className="card-header">
+          <h2>Repair prompt</h2>
+          <button
+            type="button"
+            className="secondary copy-button"
+            onClick={copyRepairPrompt}
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+        <p className="hint">
+          Paste this into Cursor or Claude to guide the fix.
+        </p>
         <pre className="repair-prompt">{report.repairPrompt}</pre>
       </div>
+
+      {history.length > 0 && (
+        <div className="card">
+          <h2>Report history</h2>
+          <p className="hint">
+            {history.length} saved {history.length === 1 ? "report" : "reports"}{" "}
+            in <code>.agentready/reports/</code>
+          </p>
+          <ul className="history-list">
+            {history.slice(0, 10).map((entry) => (
+              <li key={entry.fileName}>
+                <span
+                  className={`verdict verdict-${entry.verdict.toLowerCase()} verdict-pill`}
+                >
+                  {entry.verdict}
+                </span>
+                <span className="meta">
+                  {new Date(entry.generatedAt).toLocaleString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="actions">
         <button

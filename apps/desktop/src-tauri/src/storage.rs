@@ -10,10 +10,11 @@ use chrono::{SecondsFormat, Utc};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use crate::models::FeatureSpec;
+use crate::models::{FeatureSpec, ReadinessReport};
 
 const SCHEMA_VERSION: &str = "1.0";
 const FEATURE_SPEC_REL: &str = ".agentready/feature-spec.json";
+const REPORTS_REL: &str = ".agentready/reports";
 
 /// Mirrors docs/schemas/current-session.schema.json.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,6 +61,17 @@ impl Default for CurrentSession {
 pub struct RepoSessionState {
     pub session: CurrentSession,
     pub feature_spec: Option<FeatureSpec>,
+    pub latest_report: Option<ReadinessReport>,
+}
+
+/// Lightweight entry for the repo-local report history list.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReportHistoryEntry {
+    pub file_name: String,
+    pub path: String,
+    pub generated_at: String,
+    pub verdict: String,
 }
 
 /// Create `.agentready/` storage if missing and load any existing feature spec.
@@ -68,9 +80,11 @@ pub fn init(repo_path: &str) -> Result<RepoSessionState, String> {
     ensure_dirs(&repo)?;
     let session = load_or_create_session(&repo)?;
     let feature_spec = read_json::<FeatureSpec>(&feature_spec_path(&repo))?;
+    let latest_report = read_json::<ReadinessReport>(&latest_report_path(&repo))?;
     Ok(RepoSessionState {
         session,
         feature_spec,
+        latest_report,
     })
 }
 
@@ -87,9 +101,11 @@ pub fn save_feature_session(repo_path: &str, spec: FeatureSpec) -> Result<RepoSe
     session.last_accessed_at = now();
     write_json(&session_path(&repo), &session)?;
 
+    let latest_report = read_json::<ReadinessReport>(&latest_report_path(&repo))?;
     Ok(RepoSessionState {
         session,
         feature_spec: Some(spec),
+        latest_report,
     })
 }
 
@@ -100,9 +116,11 @@ pub fn load(repo_path: &str) -> Result<Option<RepoSessionState>, String> {
         None => Ok(None),
         Some(session) => {
             let feature_spec = read_json::<FeatureSpec>(&feature_spec_path(&repo))?;
+            let latest_report = read_json::<ReadinessReport>(&latest_report_path(&repo))?;
             Ok(Some(RepoSessionState {
                 session,
                 feature_spec,
+                latest_report,
             }))
         }
     }
@@ -126,6 +144,65 @@ pub fn set_test_command(
     write_json(&session_path(&repo), &session)?;
 
     Ok(session)
+}
+
+/// Persist a readiness report to the repo-local history and update the latest pointer.
+pub fn save_report(repo_path: &str, report: ReadinessReport) -> Result<CurrentSession, String> {
+    let repo = validated_repo(repo_path)?;
+    ensure_dirs(&repo)?;
+
+    let file_name = next_report_file_name(&repo);
+    write_json(&reports_dir(&repo).join(&file_name), &report)?;
+    write_json(&latest_report_path(&repo), &report)?;
+
+    let mut session = load_or_create_session(&repo)?;
+    let timestamp = now();
+    session.last_readiness_run_at = Some(timestamp.clone());
+    session.latest_report_verdict = Some(report.verdict.clone());
+    session.latest_report_path = Some(format!("{REPORTS_REL}/{file_name}"));
+    session.last_accessed_at = timestamp;
+    session.report_history_count = count_reports(&repo);
+    write_json(&session_path(&repo), &session)?;
+
+    Ok(session)
+}
+
+/// Load the latest persisted readiness report, if any.
+pub fn load_latest_report(repo_path: &str) -> Result<Option<ReadinessReport>, String> {
+    let repo = validated_repo(repo_path)?;
+    read_json::<ReadinessReport>(&latest_report_path(&repo))
+}
+
+/// List saved reports for the repo, newest first.
+pub fn list_reports(repo_path: &str) -> Result<Vec<ReportHistoryEntry>, String> {
+    let repo = validated_repo(repo_path)?;
+    let dir = reports_dir(&repo);
+
+    let mut entries = Vec::new();
+    if let Ok(read_dir) = fs::read_dir(&dir) {
+        for entry in read_dir.filter_map(Result::ok) {
+            let path = entry.path();
+            if path.extension().map(|ext| ext == "json").unwrap_or(false) {
+                if let Some(report) = read_json::<ReadinessReport>(&path)? {
+                    let file_name = path
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .unwrap_or_default()
+                        .to_string();
+                    entries.push(ReportHistoryEntry {
+                        path: format!("{REPORTS_REL}/{file_name}"),
+                        file_name,
+                        generated_at: report.generated_at,
+                        verdict: report.verdict,
+                    });
+                }
+            }
+        }
+    }
+
+    // Timestamped file names sort lexically; newest first.
+    entries.sort_by(|a, b| b.file_name.cmp(&a.file_name));
+    Ok(entries)
 }
 
 /// Record the outcome of a readiness run into session metadata (no report history yet).
@@ -229,6 +306,30 @@ fn feature_spec_path(repo: &Path) -> PathBuf {
     agentready_dir(repo).join("feature-spec.json")
 }
 
+fn reports_dir(repo: &Path) -> PathBuf {
+    agentready_dir(repo).join("reports")
+}
+
+fn latest_report_path(repo: &Path) -> PathBuf {
+    agentready_dir(repo).join("latest-report.json")
+}
+
+fn report_timestamp() -> String {
+    Utc::now().format("%Y%m%dT%H%M%S%3fZ").to_string()
+}
+
+fn next_report_file_name(repo: &Path) -> String {
+    let base = report_timestamp();
+    let reports_dir = reports_dir(repo);
+    let mut candidate = format!("{base}.json");
+    let mut suffix = 1;
+    while reports_dir.join(&candidate).exists() {
+        candidate = format!("{base}-{suffix}.json");
+        suffix += 1;
+    }
+    candidate
+}
+
 fn repo_name(repo: &Path) -> Option<String> {
     repo.file_name()
         .and_then(|name| name.to_str())
@@ -285,6 +386,7 @@ fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{CheckSummary, DiffSummary};
     use std::env;
 
     fn temp_repo(label: &str) -> PathBuf {
@@ -364,6 +466,107 @@ mod tests {
         let session = record_readiness_run(repo_str, "NEEDS_REVIEW".to_string()).unwrap();
         assert_eq!(session.latest_report_verdict.as_deref(), Some("NEEDS_REVIEW"));
         assert!(session.last_readiness_run_at.is_some());
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    fn sample_report(verdict: &str) -> ReadinessReport {
+        ReadinessReport {
+            schema_version: "1.0".to_string(),
+            generated_at: "2026-06-06T16:05:00Z".to_string(),
+            repo_path: "/tmp/repo".to_string(),
+            check_suite: "free-v1-precommit@1".to_string(),
+            engine_version: "0.1.0-SNAPSHOT".to_string(),
+            app_version: None,
+            duration_ms: Some(10),
+            feature_spec_id: None,
+            git: None,
+            verdict: verdict.to_string(),
+            verdict_explanation: Some("explanation".to_string()),
+            diff_summary: DiffSummary {
+                added: vec![],
+                modified: vec![],
+                deleted: vec![],
+                total_files: 0,
+                total_changed_lines: 0,
+            },
+            summary: CheckSummary {
+                pass: 0,
+                warn: 0,
+                fail: 0,
+                skip: 0,
+                total: 0,
+            },
+            checks: vec![],
+            findings: None,
+            passed_checks: None,
+            test_result: None,
+            repair_prompt: "Repair prompt".to_string(),
+        }
+    }
+
+    #[test]
+    fn save_report_writes_history_and_updates_session() {
+        let repo = temp_git_repo("reports");
+        let repo_str = repo.to_str().unwrap();
+        init(repo_str).unwrap();
+
+        let session = save_report(repo_str, sample_report("NOT_READY")).unwrap();
+        assert_eq!(session.latest_report_verdict.as_deref(), Some("NOT_READY"));
+        assert!(session.latest_report_path.is_some());
+        assert_eq!(session.report_history_count, 1);
+        assert!(repo.join(".agentready/latest-report.json").exists());
+
+        let latest = load_latest_report(repo_str).unwrap().unwrap();
+        assert_eq!(latest.verdict, "NOT_READY");
+
+        let reports = list_reports(repo_str).unwrap();
+        assert_eq!(reports.len(), 1);
+        assert_eq!(reports[0].verdict, "NOT_READY");
+        assert!(reports[0].path.starts_with(".agentready/reports/"));
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn next_report_file_name_avoids_existing_timestamp_collision() {
+        let repo = temp_git_repo("report-collision");
+        let reports = reports_dir(&repo);
+        fs::create_dir_all(&reports).unwrap();
+
+        let base = report_timestamp();
+        let existing = reports.join(format!("{base}.json"));
+        fs::write(&existing, "{}").unwrap();
+
+        let next = next_report_file_name(&repo);
+        assert!(next.starts_with(&format!("{base}-")));
+        assert!(next.ends_with(".json"));
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn init_hydrates_latest_report() {
+        let repo = temp_git_repo("hydrate");
+        let repo_str = repo.to_str().unwrap();
+        init(repo_str).unwrap();
+        save_report(repo_str, sample_report("READY_TO_COMMIT")).unwrap();
+
+        let state = init(repo_str).unwrap();
+        assert!(state.latest_report.is_some());
+        assert_eq!(state.latest_report.unwrap().verdict, "READY_TO_COMMIT");
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn load_latest_report_returns_none_when_absent() {
+        let repo = temp_git_repo("noreport");
+        let repo_str = repo.to_str().unwrap();
+        init(repo_str).unwrap();
+
+        assert!(load_latest_report(repo_str).unwrap().is_none());
+        assert!(list_reports(repo_str).unwrap().is_empty());
 
         fs::remove_dir_all(&repo).unwrap();
     }

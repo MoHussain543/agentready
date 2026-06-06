@@ -80,6 +80,7 @@ export interface ReadinessReport {
   featureSpecId?: string;
   git?: GitContext;
   verdict: Verdict;
+  verdictExplanation?: string;
   diffSummary: DiffSummary;
   summary: CheckSummary;
   checks: CheckResult[];
@@ -98,6 +99,7 @@ export interface AppState {
   featureSpec: import("./engine").FeatureSpec | null;
   currentSession: import("../lib/storage").CurrentSession | null;
   report: ReadinessReport | null;
+  history: import("../lib/storage").ReportHistoryEntry[];
   testCommand: string;
   runTests: boolean;
 }

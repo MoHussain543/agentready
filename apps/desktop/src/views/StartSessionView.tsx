@@ -1,15 +1,20 @@
-import type { FeatureSessionInput } from "../types";
+import { VerdictBadge } from "../components/VerdictBadge";
+import type { CurrentSession } from "../lib/storage";
+import type { FeatureSessionInput, Verdict } from "../types";
 
 interface StartSessionViewProps {
   repoPath: string;
   session: FeatureSessionInput;
   testCommand: string;
   runTests: boolean;
+  latestSession: CurrentSession | null;
+  hasLatestReport: boolean;
   isRunning: boolean;
   error: string | null;
   onSessionChange: (session: FeatureSessionInput) => void;
   onTestCommandChange: (testCommand: string) => void;
   onRunTestsChange: (runTests: boolean) => void;
+  onViewLatest: () => void;
   onBack: () => void;
   onRunCheck: () => void;
 }
@@ -19,14 +24,19 @@ export function StartSessionView({
   session,
   testCommand,
   runTests,
+  latestSession,
+  hasLatestReport,
   isRunning,
   error,
   onSessionChange,
   onTestCommandChange,
   onRunTestsChange,
+  onViewLatest,
   onBack,
   onRunCheck,
 }: StartSessionViewProps) {
+  const latestVerdict = latestSession?.latestReportVerdict ?? null;
+  const lastRunAt = latestSession?.lastReadinessRunAt ?? null;
   const canRun =
     session.title.trim().length > 0 &&
     session.description.trim().length > 0 &&
@@ -44,6 +54,32 @@ export function StartSessionView({
         <div className="error-banner" role="alert">
           <strong>Readiness check failed</strong>
           <p>{error}</p>
+        </div>
+      )}
+
+      {latestVerdict && (
+        <div className="card latest-report-card">
+          <div className="card-header">
+            <div>
+              <h2>Latest saved check</h2>
+              {lastRunAt && (
+                <p className="meta">
+                  {new Date(lastRunAt).toLocaleString()}
+                </p>
+              )}
+            </div>
+            <VerdictBadge verdict={latestVerdict as Verdict} />
+          </div>
+          {hasLatestReport && (
+            <button
+              type="button"
+              className="secondary"
+              disabled={isRunning}
+              onClick={onViewLatest}
+            >
+              View latest report
+            </button>
+          )}
         </div>
       )}
 

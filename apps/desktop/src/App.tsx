@@ -3,11 +3,13 @@ import { buildFeatureSpec, sessionInputFromSpec } from "./lib/featureSpec";
 import { runReadinessCheck } from "./lib/readiness";
 import {
   initRepoStorage,
-  recordReadinessRun,
+  listReports,
   saveFeatureSession,
+  saveReport,
   setTestCommand,
 } from "./lib/storage";
 import type { AppScreen, AppState, FeatureSessionInput } from "./types";
+import type { ReportHistoryEntry } from "./lib/storage";
 import { RepoSelectionView } from "./views/RepoSelectionView";
 import { ResultsView } from "./views/ResultsView";
 import { StartSessionView } from "./views/StartSessionView";
@@ -29,6 +31,7 @@ function App() {
     featureSpec: null,
     currentSession: null,
     report: null,
+    history: [],
     testCommand: "",
     runTests: false,
   });
@@ -38,6 +41,16 @@ function App() {
 
   const goTo = (screen: AppScreen) => {
     setState((current) => ({ ...current, screen }));
+  };
+
+  const loadHistory = async (
+    repoPath: string,
+  ): Promise<ReportHistoryEntry[]> => {
+    try {
+      return await listReports(repoPath);
+    } catch {
+      return [];
+    }
   };
 
   const handleContinue = async () => {
@@ -50,6 +63,7 @@ function App() {
       const hydratedSession = repoState.featureSpec
         ? sessionInputFromSpec(repoState.featureSpec)
         : state.session;
+      const history = await loadHistory(trimmedRepoPath);
 
       setState((current) => ({
         ...current,
@@ -57,6 +71,8 @@ function App() {
         session: hydratedSession,
         featureSpec: repoState.featureSpec,
         currentSession: repoState.session,
+        report: repoState.latestReport,
+        history,
         testCommand: repoState.session.testCommand ?? "",
         screen: "session",
       }));
@@ -91,16 +107,15 @@ function App() {
       );
 
       let currentSession = repoState.session;
+      let history = state.history;
       let persistenceWarning: string | null = null;
       try {
-        currentSession = await recordReadinessRun(
-          trimmedRepoPath,
-          report.verdict,
-        );
+        currentSession = await saveReport(trimmedRepoPath, report);
+        history = await loadHistory(trimmedRepoPath);
       } catch (recordError) {
         persistenceWarning = errorMessage(
           recordError,
-          "Readiness check completed, but session metadata could not be updated.",
+          "Readiness check completed, but the report could not be saved locally.",
         );
       }
 
@@ -111,6 +126,7 @@ function App() {
         featureSpec,
         currentSession,
         report,
+        history,
         screen: navigateToResults ? "results" : current.screen,
       }));
     } catch (checkError) {
@@ -140,6 +156,8 @@ function App() {
           session={state.session}
           testCommand={state.testCommand}
           runTests={state.runTests}
+          latestSession={state.currentSession}
+          hasLatestReport={state.report !== null}
           isRunning={isRunning}
           error={error}
           onSessionChange={(session) =>
@@ -151,6 +169,7 @@ function App() {
           onRunTestsChange={(runTests) =>
             setState((current) => ({ ...current, runTests }))
           }
+          onViewLatest={() => goTo("results")}
           onBack={() => {
             setError(null);
             goTo("repo");
@@ -164,6 +183,8 @@ function App() {
           repoPath={state.repoPath}
           session={state.session}
           report={state.report}
+          history={state.history}
+          latestReportPath={state.currentSession?.latestReportPath ?? null}
           isRunning={isRunning}
           error={error}
           onBack={() => {

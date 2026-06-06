@@ -51,6 +51,20 @@ export function RepoSelectionView({
           </button>
         </div>
       </div>
+
+      <div className="card info-card">
+        <h2>What Free v1 does</h2>
+        <ul className="info-list">
+          <li>Runs baseline readiness checks on your uncommitted git diff</li>
+          <li>Matches changes against your original feature request</li>
+          <li>Optionally runs a local test command you configure</li>
+          <li>Stores everything locally under <code>.agentready/</code></li>
+        </ul>
+        <p className="hint">
+          No signup, no auto-commit, no cloud. Deep stack-specific analysis is
+          not included yet.
+        </p>
+      </div>
     </section>
   );
 }

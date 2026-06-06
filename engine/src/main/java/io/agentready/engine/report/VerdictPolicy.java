@@ -31,4 +31,14 @@ public final class VerdictPolicy {
         }
         return anyWarn ? Verdict.NEEDS_REVIEW : Verdict.READY_TO_COMMIT;
     }
+
+    /** Short, deterministic one-line explanation of a verdict for display. */
+    public static String explain(Verdict verdict) {
+        return switch (verdict) {
+            case NOT_READY -> "Blocking issues were found in the current diff.";
+            case NEEDS_REVIEW ->
+                    "No blocking issues were found, but some changes need review.";
+            case READY_TO_COMMIT -> "The current diff passed the baseline readiness checks.";
+        };
+    }
 }

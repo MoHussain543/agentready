@@ -485,6 +485,83 @@ class ReadinessRunnerTest {
     }
 
     @Test
+    void verdictExplanationForReadyToCommit() {
+        ReadinessReport report = new ReadinessRunner(gitWithTestedChange())
+                .handle(request("/tmp/repo", null)).report();
+
+        assertEquals(Verdict.READY_TO_COMMIT, report.verdict());
+        assertEquals(
+                "The current diff passed the baseline readiness checks.",
+                report.verdictExplanation());
+    }
+
+    @Test
+    void verdictExplanationForNeedsReview() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/main/App.java", ChangeType.MODIFIED));
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(Verdict.NEEDS_REVIEW, report.verdict());
+        assertEquals(
+                "No blocking issues were found, but some changes need review.",
+                report.verdictExplanation());
+    }
+
+    @Test
+    void verdictExplanationForNotReady() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/test/AppTest.java", ChangeType.DELETED));
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(Verdict.NOT_READY, report.verdict());
+        assertEquals(
+                "Blocking issues were found in the current diff.", report.verdictExplanation());
+    }
+
+    @Test
+    void repairPromptIncludesFeatureDescriptionAndFindings() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/main/App.java", ChangeType.MODIFIED));
+        FeatureSpec spec = spec(List.of(), List.of(), List.of());
+
+        ReadinessReport report = new ReadinessRunner(git)
+                .handle(request("/tmp/repo", null, spec)).report();
+
+        String prompt = report.repairPrompt();
+        assertTrue(prompt.contains("A test feature description"));
+        assertTrue(prompt.contains("AgentReady verdict: NEEDS_REVIEW"));
+        assertTrue(prompt.contains("Fix these issues:"));
+        assertTrue(prompt.contains("Do not change unrelated files"));
+    }
+
+    @Test
+    void repairPromptIncludesTestGuidanceWhenTestsFail() {
+        TestRunner runner = fixedRunner(new TestResult(
+                true, TestResultStatus.fail, "npm test", 1, 800, "1 test failed", null,
+                "Tests failed with exit code 1"));
+
+        ReadinessReport report = new ReadinessRunner(gitWithTestedChange(), runner)
+                .handle(request("/tmp/repo", runTestsOptions("npm test"))).report();
+
+        String prompt = report.repairPrompt();
+        assertTrue(prompt.contains("Tests:"));
+        assertTrue(prompt.toLowerCase().contains("failing"));
+        assertTrue(prompt.contains("npm test"));
+    }
+
+    @Test
+    void repairPromptIsMinimalWhenReady() {
+        ReadinessReport report = new ReadinessRunner(gitWithTestedChange())
+                .handle(request("/tmp/repo", null)).report();
+
+        String prompt = report.repairPrompt();
+        assertTrue(prompt.contains("AgentReady verdict: READY_TO_COMMIT"));
+        assertFalse(prompt.contains("Fix these issues:"));
+    }
+
+    @Test
     void reportSerializesToJson() throws Exception {
         FakeGitService git = new FakeGitService();
         git.files = List.of(new ChangedFile("src/App.java", ChangeType.MODIFIED));
