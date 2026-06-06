@@ -7,4 +7,5 @@ public record EngineRequest(
         String protocolVersion,
         String command,
         String repoPath,
+        FeatureSpec featureSpec,
         EngineOptions options) {}
