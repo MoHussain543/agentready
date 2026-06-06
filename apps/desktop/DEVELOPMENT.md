@@ -57,6 +57,8 @@ The Tauri shell owns repo-local state under `.agentready/` (the Java engine stay
 | `.agentready/latest-report.json` | shell | copy of the most recent report (used for hydration) |
 | `.agentready/cache/.gitkeep` | shell | created on init |
 
+These files are local AgentReady state and should normally be gitignored in the target repository.
+
 Tauri commands:
 
 - `init_repo_storage(repoPath)` — creates `.agentready/` if missing, seeds/loads `session.json`, returns `{ session, featureSpec, latestReport }`.

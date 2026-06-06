@@ -33,8 +33,11 @@ import io.agentready.engine.rules.RuleResult;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Builds a readiness report from the real uncommitted git diff and the baseline rule engine.
@@ -97,16 +100,19 @@ public final class ReadinessRunner implements EngineHandler {
         GitContext gitContext;
         int changedLines;
         Map<String, List<String>> addedLines;
+        Map<String, Integer> changedLineCounts;
         try {
             changedFiles = gitService.changedFiles(repo);
+            changedFiles = filterMeaningfulFiles(changedFiles);
             if (changedFiles.isEmpty()) {
                 return EngineResponse.error(protocolVersion, new EngineError(
                         "NO_DIFF",
-                        "No uncommitted changes to analyze in " + request.repoPath()));
+                        "No meaningful uncommitted changes to analyze in " + request.repoPath()));
             }
             gitContext = gitService.readGitContext(repo, changedFiles);
-            changedLines = gitService.changedLineCount(repo);
-            addedLines = gitService.addedLinesByPath(repo);
+            changedLineCounts = gitService.changedLineCounts(repo);
+            changedLines = sumChangedLines(changedFiles, changedLineCounts);
+            addedLines = filterAddedLines(changedFiles, gitService.addedLinesByPath(repo));
         } catch (GitException e) {
             return EngineResponse.error(protocolVersion, new EngineError(e.code(), e.getMessage()));
         }
@@ -238,6 +244,40 @@ public final class ReadinessRunner implements EngineHandler {
         return new CheckResult(
                 TEST_CHECK_ID, TEST_CHECK_NAME, status, testResult.message(), remediation,
                 List.of(), testResult.durationMs());
+    }
+
+    private List<ChangedFile> filterMeaningfulFiles(List<ChangedFile> changedFiles) {
+        return changedFiles.stream()
+                .filter(file -> !classifier.isIgnoredForReadiness(file.path()))
+                .toList();
+    }
+
+    private static int sumChangedLines(List<ChangedFile> changedFiles, Map<String, Integer> changedLineCounts) {
+        int total = 0;
+        Set<String> includedPaths = changedFiles.stream()
+                .map(ChangedFile::path)
+                .collect(Collectors.toSet());
+        for (String path : includedPaths) {
+            total += changedLineCounts.getOrDefault(path, 0);
+        }
+        return total;
+    }
+
+    private static Map<String, List<String>> filterAddedLines(
+            List<ChangedFile> changedFiles, Map<String, List<String>> addedLinesByPath) {
+        if (addedLinesByPath == null || addedLinesByPath.isEmpty()) {
+            return Map.of();
+        }
+        Set<String> includedPaths = changedFiles.stream()
+                .map(ChangedFile::path)
+                .collect(Collectors.toSet());
+        Map<String, List<String>> filtered = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> entry : addedLinesByPath.entrySet()) {
+            if (includedPaths.contains(entry.getKey())) {
+                filtered.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return filtered;
     }
 
     private static Finding toFinding(CheckResult check, FindingSeverity severity) {

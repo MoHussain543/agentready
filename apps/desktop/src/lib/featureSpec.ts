@@ -2,6 +2,7 @@ import type { FeatureSessionInput } from "../types";
 import type { FeatureSpec } from "../types/engine";
 
 const STOP_WORDS = new Set([
+  "add",
   "a",
   "an",
   "and",
@@ -10,18 +11,42 @@ const STOP_WORDS = new Set([
   "at",
   "be",
   "by",
+  "change",
+  "changes",
+  "commit",
+  "current",
+  "describe",
+  "do",
   "for",
+  "file",
+  "files",
   "from",
   "in",
   "is",
   "it",
+  "keep",
+  "local",
+  "locally",
+  "make",
+  "latest",
   "of",
   "on",
   "or",
+  "original",
+  "polish",
+  "reopen",
+  "requested",
+  "request",
+  "review",
+  "show",
   "should",
   "that",
   "the",
   "this",
+  "unrelated",
+  "use",
+  "using",
+  "your",
   "to",
   "when",
   "with",
@@ -42,6 +67,8 @@ const RISK_TERMS = [
   "token",
   "api key",
 ];
+
+const MAX_EXPECTED_KEYWORDS = 12;
 
 export function buildFeatureSpec(
   session: FeatureSessionInput,
@@ -88,10 +115,18 @@ export function extractExpectedKeywords(
       .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
       .map((token) => token.trim())
-      .filter((token) => token.length > 2 && !STOP_WORDS.has(token));
+      .filter(
+        (token) =>
+          token.length > 2 &&
+          !STOP_WORDS.has(token) &&
+          !/^\d+$/.test(token),
+      );
 
   // Title terms first (they tend to be the most important), then description terms.
-  return [...new Set([...meaningful(title), ...meaningful(description)])];
+  return [...new Set([...meaningful(title), ...meaningful(description)])].slice(
+    0,
+    MAX_EXPECTED_KEYWORDS,
+  );
 }
 
 export function extractRiskKeywords(text: string): string[] {

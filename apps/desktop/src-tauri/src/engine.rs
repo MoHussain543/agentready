@@ -99,9 +99,9 @@ pub fn resolve_engine_jar() -> Result<PathBuf, String> {
         manifest_dir.join("resources/agentready-engine.jar"),
     ];
 
-    for candidate in candidates {
+    for candidate in &candidates {
         if candidate.exists() {
-            return Ok(candidate);
+            return Ok(candidate.to_path_buf());
         }
     }
 

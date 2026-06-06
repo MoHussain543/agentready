@@ -70,7 +70,7 @@ export function ResultsView({
         </div>
       )}
 
-      <div className="grid">
+      <div className="grid results-overview-grid">
         <div className="card">
           <h2>Original request</h2>
           <p className="request-copy">{session.description}</p>

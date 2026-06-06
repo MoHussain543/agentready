@@ -9,7 +9,8 @@ class SpecMatcherTest {
 
     private static final String CORPUS =
             "src/checkout/paymentcart.java\nreturn responseentity.status(404).build();\n"
-                    + "user authentication flow added\n";
+                    + "user authentication flow added\n"
+                    + "report history persistence with hydration enabled\n";
 
     @Test
     void matchesSingleWordKeywords() {
@@ -22,6 +23,13 @@ class SpecMatcherTest {
     void matchesMultiWordPhraseByTokens() {
         assertTrue(SpecMatcher.containsKeyword(CORPUS, "user authentication"));
         assertFalse(SpecMatcher.containsKeyword(CORPUS, "user logout"));
+    }
+
+    @Test
+    void matchesSimpleWordVariantsByStem() {
+        assertTrue(SpecMatcher.containsKeyword(CORPUS, "reports"));
+        assertTrue(SpecMatcher.containsKeyword(CORPUS, "persist"));
+        assertTrue(SpecMatcher.containsKeyword(CORPUS, "hydrate"));
     }
 
     @Test

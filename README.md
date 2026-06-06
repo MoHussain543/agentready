@@ -2,7 +2,8 @@
 
 Local-first desktop app that verifies **AI-generated code before commit**. Open a git repo, start a feature session with your original request, let your agent make changes, then run baseline readiness checks against the uncommitted diff. AgentReady returns a verdict, findings, and a repair prompt — you commit manually when ready.
 
-Free v1 is offline, requires no signup, and stores repo state in `.agentready/`.
+Free v1 is offline, requires no signup, and stores repo-local state in `.agentready/`.
+That directory is intended to stay local and should normally be gitignored.
 
 ## Repository layout
 
@@ -55,4 +56,4 @@ Override with `AGENTREADY_ENGINE_JAR` or `AGENTREADY_JAVA` if needed. See [apps/
 
 ## Integration boundary
 
-The shell and engine communicate via JSON defined in `docs/schemas/`. The shell persists session, feature spec, and reports under `.agentready/` in the target repository.
+The shell and engine communicate via JSON defined in `docs/schemas/`. The shell persists session, feature spec, and reports under `.agentready/` in the target repository. Those files are local tool state, not application source, and should generally remain untracked.

@@ -24,7 +24,7 @@ body {
 }
 
 .view-wide {
-  max-width: 48rem;
+  max-width: 72rem;
 }
 
 .view-header h1 {
@@ -62,10 +62,11 @@ body {
 
 .card {
   margin-top: 1.25rem;
-  padding: 1.25rem;
+  padding: 1.35rem 1.4rem;
   background: #fff;
   border: 1px solid #e4e4e7;
-  border-radius: 8px;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(24, 24, 27, 0.04);
 }
 
 .card h2 {
@@ -138,6 +139,17 @@ button.secondary {
 @media (min-width: 720px) {
   .grid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .results-overview-grid {
+    grid-template-columns: minmax(18rem, 1.1fr) minmax(30rem, 1.9fr);
+    align-items: start;
+  }
+
+  .results-overview-grid > .card:last-child {
+    grid-column: 1 / -1;
   }
 }
 
@@ -225,6 +237,15 @@ button.secondary {
 .request-copy {
   margin: 0;
   white-space: pre-wrap;
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+.diff-group code,
+.saved-note code,
+.hint code,
+.meta code {
+  word-break: break-word;
 }
 
 .paths {

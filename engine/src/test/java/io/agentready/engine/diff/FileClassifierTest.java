@@ -57,6 +57,15 @@ class FileClassifierTest {
     }
 
     @Test
+    void detectsIgnoredInternalAndGeneratedArtifacts() {
+        assertTrue(classifier.isAgentReadyInternal(".agentready/session.json"));
+        assertTrue(classifier.isGeneratedArtifact("apps/desktop/src-tauri/gen/schemas/desktop-schema.json"));
+        assertTrue(classifier.isIgnoredForReadiness(".agentready/feature-spec.json"));
+        assertTrue(classifier.isIgnoredForReadiness("src-tauri/gen/schemas/capabilities.json"));
+        assertFalse(classifier.isIgnoredForReadiness("src/main/User.java"));
+    }
+
+    @Test
     void classifyReturnsPrimaryCategory() {
         assertEquals(FileCategory.TEST, classifier.classify("src/UserTest.java"));
         assertEquals(FileCategory.DEPENDENCY, classifier.classify("package.json"));

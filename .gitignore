@@ -12,6 +12,10 @@ dist/
 
 # Tauri
 apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+
+# AgentReady local state
+.agentready/
 
 # IDE
 .idea/

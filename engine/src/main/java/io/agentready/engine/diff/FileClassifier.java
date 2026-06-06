@@ -175,13 +175,45 @@ public final class FileClassifier {
         return false;
     }
 
+    /**
+     * AgentReady's own repo-local bookkeeping should never influence readiness analysis.
+     */
+    public boolean isAgentReadyInternal(String path) {
+        String lower = normalize(path);
+        return lower.equals(".agentready")
+                || lower.startsWith(".agentready/");
+    }
+
+    /**
+     * Obvious generated artifacts are low-signal for baseline readiness checks.
+     */
+    public boolean isGeneratedArtifact(String path) {
+        String lower = normalize(path);
+        return lower.startsWith("src-tauri/gen/")
+                || lower.contains("/src-tauri/gen/")
+                || lower.startsWith("gen/schemas/")
+                || lower.contains("/gen/schemas/")
+                || hasSegment(lower, Set.of("generated"));
+    }
+
+    /**
+     * Files ignored from baseline readiness analysis to reduce false-noise.
+     */
+    public boolean isIgnoredForReadiness(String path) {
+        return isAgentReadyInternal(path) || isGeneratedArtifact(path);
+    }
+
     private static boolean hasSegment(String lowerPath, Set<String> segments) {
-        for (String segment : lowerPath.replace('\\', '/').split("/")) {
+        for (String segment : normalize(lowerPath).split("/")) {
             if (segments.contains(segment)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static String normalize(String path) {
+        return path.replace('\\', '/').toLowerCase();
     }
 
     private static String fileName(String path) {

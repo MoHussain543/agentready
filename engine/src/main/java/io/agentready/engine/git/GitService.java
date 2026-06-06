@@ -105,11 +105,17 @@ public class GitService {
 
     /** Approximate changed line count (added + removed) for tracked changes vs HEAD. */
     public int changedLineCount(Path repo) {
-        int total = sumNumstat(repo, List.of("diff", "--numstat", "HEAD"));
+        return changedLineCounts(repo).values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    /** Approximate changed line count by file path for the current uncommitted change set. */
+    public Map<String, Integer> changedLineCounts(Path repo) {
+        Map<String, Integer> totals = new LinkedHashMap<>();
+        accumulateNumstat(repo, List.of("diff", "--numstat", "HEAD"), totals);
 
         GitCommandResult untracked = tryRun(repo, List.of("ls-files", "--others", "--exclude-standard"));
         if (untracked == null || !untracked.ok()) {
-            return total;
+            return totals;
         }
 
         for (String rawLine : untracked.stdout().split("\n", -1)) {
@@ -117,9 +123,9 @@ public class GitService {
             if (relativePath.isEmpty()) {
                 continue;
             }
-            total += countFileLines(repo.resolve(relativePath));
+            totals.put(unquote(relativePath), countFileLines(repo.resolve(relativePath)));
         }
-        return total;
+        return totals;
     }
 
     /**
@@ -321,24 +327,24 @@ public class GitService {
         }
     }
 
-    private int sumNumstat(Path repo, List<String> args) {
+    private void accumulateNumstat(Path repo, List<String> args, Map<String, Integer> totals) {
         GitCommandResult result = tryRun(repo, args);
         if (result == null || !result.ok()) {
-            return 0;
+            return;
         }
 
-        int total = 0;
         for (String rawLine : result.stdout().split("\n", -1)) {
             String line = stripTrailingCr(rawLine);
             if (line.isBlank()) {
                 continue;
             }
             String[] parts = line.split("\t");
-            if (parts.length >= 2) {
-                total += parseCount(parts[0]) + parseCount(parts[1]);
+            if (parts.length >= 3) {
+                String path = unquote(parts[2]);
+                int count = parseCount(parts[0]) + parseCount(parts[1]);
+                totals.merge(path, count, Integer::sum);
             }
         }
-        return total;
     }
 
     private int countFileLines(Path path) {

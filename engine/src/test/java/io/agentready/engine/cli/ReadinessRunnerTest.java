@@ -40,6 +40,7 @@ class ReadinessRunnerTest {
         private List<ChangedFile> files = List.of();
         private GitContextValues context = new GitContextValues();
         private int changedLines = 10;
+        private Map<String, Integer> changedLineCounts = Map.of();
         private Map<String, List<String>> addedLines = Map.of();
 
         @Override
@@ -62,6 +63,17 @@ class ReadinessRunnerTest {
         @Override
         public int changedLineCount(Path repo) {
             return changedLines;
+        }
+
+        @Override
+        public Map<String, Integer> changedLineCounts(Path repo) {
+            if (!changedLineCounts.isEmpty()) {
+                return changedLineCounts;
+            }
+            return files.stream().collect(java.util.stream.Collectors.toMap(
+                    ChangedFile::path,
+                    file -> changedLines,
+                    (left, right) -> left));
         }
 
         @Override
@@ -259,6 +271,56 @@ class ReadinessRunnerTest {
         assertEquals("error", response.status());
         assertEquals("NO_DIFF", response.error().code());
         assertNull(response.report());
+    }
+
+    @Test
+    void returnsNoDiffWhenOnlyInternalAgentReadyFilesChanged() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(
+                new ChangedFile(".agentready/session.json", ChangeType.MODIFIED),
+                new ChangedFile(".agentready/feature-spec.json", ChangeType.MODIFIED));
+
+        EngineResponse response = new ReadinessRunner(git).handle(request("/tmp/repo", null));
+
+        assertEquals("error", response.status());
+        assertEquals("NO_DIFF", response.error().code());
+    }
+
+    @Test
+    void ignoresInternalFilesInReadinessAnalysis() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(
+                new ChangedFile(".agentready/session.json", ChangeType.MODIFIED),
+                new ChangedFile("src/main/App.java", ChangeType.MODIFIED));
+        git.changedLineCounts = Map.of(
+                ".agentready/session.json", 4000,
+                "src/main/App.java", 25);
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(1, report.diffSummary().totalFiles());
+        assertEquals(25, report.diffSummary().totalChangedLines());
+        assertEquals(CheckStatus.pass, check(report, "config-env-dependency-risk").status());
+    }
+
+    @Test
+    void generatedTauriArtifactsDoNotDriveRiskOrLargeDiffWarnings() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(
+                new ChangedFile("apps/desktop/src-tauri/gen/schemas/desktop-schema.json", ChangeType.ADDED),
+                new ChangedFile("src/main/App.java", ChangeType.MODIFIED),
+                new ChangedFile("src/test/AppTest.java", ChangeType.MODIFIED));
+        git.changedLineCounts = Map.of(
+                "apps/desktop/src-tauri/gen/schemas/desktop-schema.json", 9000,
+                "src/main/App.java", 40,
+                "src/test/AppTest.java", 12);
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(2, report.diffSummary().totalFiles());
+        assertEquals(52, report.diffSummary().totalChangedLines());
+        assertEquals(CheckStatus.pass, check(report, "config-env-dependency-risk").status());
+        assertEquals(CheckStatus.pass, check(report, "large-diff").status());
     }
 
     @Test

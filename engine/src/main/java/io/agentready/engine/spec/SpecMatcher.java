@@ -25,12 +25,16 @@ public final class SpecMatcher {
         if (corpus.contains(normalized)) {
             return true;
         }
+        String stemmed = stem(normalized);
+        if (stemmed.length() >= 5 && corpus.contains(stemmed)) {
+            return true;
+        }
         String[] tokens = normalized.split("\\s+");
         if (tokens.length <= 1) {
             return false;
         }
         for (String token : tokens) {
-            if (token.length() > 2 && !corpus.contains(token)) {
+            if (token.length() > 2 && !containsTokenVariant(corpus, token)) {
                 return false;
             }
         }
@@ -43,5 +47,29 @@ public final class SpecMatcher {
             return false;
         }
         return Pattern.compile("\\b" + code + "\\b").matcher(corpus).find();
+    }
+
+    private static boolean containsTokenVariant(String corpus, String token) {
+        if (corpus.contains(token)) {
+            return true;
+        }
+        String stemmed = stem(token);
+        return stemmed.length() >= 5 && corpus.contains(stemmed);
+    }
+
+    private static String stem(String value) {
+        String stemmed = value;
+        String[] suffixes = {"ations", "ation", "ments", "ment", "tions", "tion", "ings", "ing",
+                "ions", "ion", "ers", "er", "ies", "ied", "ed", "es", "s"};
+        for (String suffix : suffixes) {
+            if (stemmed.endsWith(suffix) && stemmed.length() - suffix.length() >= 4) {
+                stemmed = stemmed.substring(0, stemmed.length() - suffix.length());
+                break;
+            }
+        }
+        if (stemmed.endsWith("e") && stemmed.length() >= 6) {
+            stemmed = stemmed.substring(0, stemmed.length() - 1);
+        }
+        return stemmed;
     }
 }
