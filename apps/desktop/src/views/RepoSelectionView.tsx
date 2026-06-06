@@ -58,7 +58,7 @@ export function RepoSelectionView({
           <li>Runs baseline readiness checks on your uncommitted git diff</li>
           <li>Matches changes against your original feature request</li>
           <li>Optionally runs a local test command you configure</li>
-          <li>Stores everything locally under <code>.agentready/</code></li>
+          <li>Saves local session state and report history under <code>.agentready/</code></li>
         </ul>
         <p className="hint">
           No signup, no auto-commit, no cloud. Deep stack-specific analysis is
