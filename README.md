@@ -1,1 +1,50 @@
-# agent-ready
+# AgentReady
+
+Local-first desktop app that verifies **AI-generated code before commit**. Open a git repo, start a feature session with your original request, let your agent make changes, then run baseline readiness checks against the uncommitted diff. AgentReady returns a verdict, findings, and a repair prompt — you commit manually when ready.
+
+Free v1 is offline, requires no signup, and stores repo state in `.agentready/`.
+
+## Repository layout
+
+```
+agentready/
+├── apps/
+│   └── desktop/     # Tauri shell (Rust) + React/TypeScript UI
+├── docs/            # Product scope, architecture, JSON schemas
+└── engine/          # Java verification engine (Maven)
+```
+
+| Path | Purpose |
+|------|---------|
+| `apps/desktop/` | Desktop app: opens repos, runs checks, displays verdicts and repair prompts. |
+| `engine/` | Stateless Java process: analyzes git diff, returns JSON report. |
+| `docs/` | Source of truth for scope, architecture, and integration contracts. |
+
+See [docs/free-v1-scope.md](docs/free-v1-scope.md) and [docs/architecture.md](docs/architecture.md) for design details.
+
+## Prerequisites
+
+- **Desktop:** Node.js 20+, Rust (stable), platform Tauri dependencies ([Tauri prerequisites](https://v2.tauri.app/start/prerequisites/))
+- **Engine:** JDK 21+, Maven 3.9+
+
+## Development
+
+### Engine
+
+```bash
+cd engine
+mvn package
+java -jar target/agentready-engine.jar   # stdin JSON protocol (stub)
+```
+
+### Desktop
+
+```bash
+cd apps/desktop
+npm install
+npm run tauri dev
+```
+
+## Integration boundary
+
+The shell and engine communicate via JSON defined in `docs/schemas/`. The shell persists session, feature spec, and reports under `.agentready/` in the target repository.

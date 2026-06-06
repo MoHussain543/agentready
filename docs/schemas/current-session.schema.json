@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentready.dev/schemas/current-session.schema.json",
+  "title": "CurrentSession",
+  "description": "Repo-local session metadata for resuming work. Stored at .agentready/session.json. UI-only state is not persisted here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "repoPath",
+    "openedAt",
+    "lastAccessedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "repoPath": {
+      "type": "string",
+      "description": "Absolute path to the repository root."
+    },
+    "repoName": {
+      "type": "string",
+      "description": "Display name derived from the directory basename."
+    },
+    "openedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this repo was first opened in AgentReady."
+    },
+    "lastAccessedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time the user opened or ran a check on this repo."
+    },
+    "lastReadinessRunAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When the last readiness check completed; null if never run."
+    },
+    "latestReportPath": {
+      "type": ["string", "null"],
+      "description": "Repo-relative path to latest report, e.g. .agentready/reports/latest.json."
+    },
+    "latestReportVerdict": {
+      "type": ["string", "null"],
+      "enum": ["READY_TO_COMMIT", "NOT_READY", "NEEDS_REVIEW", null],
+      "description": "Cached verdict from the latest report."
+    },
+    "activeFeatureSpecId": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "UUID of the active feature-spec.json; null if no spec."
+    },
+    "featureSpecPath": {
+      "type": "string",
+      "const": ".agentready/feature-spec.json"
+    },
+    "reportHistoryCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of timestamped reports on disk; optional cache for UI."
+    },
+    "appVersion": {
+      "type": "string",
+      "description": "Desktop app version that last wrote this file."
+    }
+  }
+}

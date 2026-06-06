@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentready.dev/schemas/feature-spec.schema.json",
+  "title": "FeatureSpec",
+  "description": "Lightweight feature session spec derived from the user's original request. Used to match the uncommitted diff during readiness checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "title",
+    "originalFeatureDescription",
+    "expectedKeywords",
+    "expectedStatusCodes",
+    "riskKeywords",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Stable identifier for this feature session."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Short title derived from or provided with the original request."
+    },
+    "originalFeatureDescription": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8000,
+      "description": "User's original feature request as entered when starting the session."
+    },
+    "expectedKeywords": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Keywords extracted from the description that should appear in the changed diff."
+    },
+    "expectedStatusCodes": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 100,
+        "maximum": 599
+      },
+      "description": "HTTP status codes extracted from the description, e.g. 404, 410."
+    },
+    "riskKeywords": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Terms from the description that imply higher-risk changes (auth, payment, migration, etc.)."
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

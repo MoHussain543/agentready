@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentready.dev/schemas/readiness-report.schema.json",
+  "title": "ReadinessReport",
+  "description": "Pre-commit readiness report for uncommitted AI-generated changes in a git repository.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "repoPath",
+    "checkSuite",
+    "engineVersion",
+    "verdict",
+    "diffSummary",
+    "summary",
+    "checks",
+    "repairPrompt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repoPath": {
+      "type": "string",
+      "description": "Absolute path to the analyzed repository."
+    },
+    "checkSuite": {
+      "type": "string",
+      "description": "Check suite identifier, e.g. free-v1-precommit@1."
+    },
+    "engineVersion": {
+      "type": "string",
+      "description": "Semver of the Java verification engine."
+    },
+    "appVersion": {
+      "type": "string",
+      "description": "Semver of the desktop app that invoked the run."
+    },
+    "durationMs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "featureSpecId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the feature spec used for this run, if any."
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "branch": { "type": "string" },
+        "baseCommit": {
+          "type": "string",
+          "description": "Short SHA of HEAD at run time."
+        },
+        "isDirty": { "type": "boolean" },
+        "stagedFileCount": { "type": "integer", "minimum": 0 },
+        "unstagedFileCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["READY_TO_COMMIT", "NOT_READY", "NEEDS_REVIEW"],
+      "description": "Overall pre-commit recommendation."
+    },
+    "diffSummary": {
+      "$ref": "#/$defs/DiffSummary"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pass", "warn", "fail", "skip", "total"],
+      "properties": {
+        "pass": { "type": "integer", "minimum": 0 },
+        "warn": { "type": "integer", "minimum": 0 },
+        "fail": { "type": "integer", "minimum": 0 },
+        "skip": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/CheckResult" }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Flattened list of fail/warn outcomes for quick display.",
+      "items": { "$ref": "#/$defs/Finding" }
+    },
+    "passedChecks": {
+      "type": "array",
+      "description": "Ids of checks that passed.",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
+    },
+    "testResult": {
+      "$ref": "#/$defs/TestResult"
+    },
+    "repairPrompt": {
+      "type": "string",
+      "description": "Plain-text prompt the user can paste into their AI agent to address findings."
+    }
+  },
+  "$defs": {
+    "DiffSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["added", "modified", "deleted", "totalFiles", "totalChangedLines"],
+      "properties": {
+        "added": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Repo-relative paths of added files."
+        },
+        "modified": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "deleted": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "totalFiles": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalChangedLines": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Approximate lines added + removed in the diff."
+        }
+      }
+    },
+    "CheckResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "status", "message"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "name": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["pass", "warn", "fail", "skip"]
+        },
+        "message": { "type": "string" },
+        "remediation": { "type": "string" },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "path"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["file", "hunk", "pattern", "keyword", "note"]
+              },
+              "path": { "type": "string" },
+              "detail": { "type": "string" }
+            }
+          }
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "Finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkId", "severity", "message"],
+      "properties": {
+        "checkId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["warn", "fail"]
+        },
+        "message": { "type": "string" },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "TestResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ran", "status"],
+      "properties": {
+        "ran": {
+          "type": "boolean",
+          "description": "True if a test command was executed for this report."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pass", "fail", "warn", "skip", "error"],
+          "description": "skip when runTests was false or no testCommand configured."
+        },
+        "command": {
+          "type": "string",
+          "description": "Shell command that was run."
+        },
+        "exitCode": { "type": "integer" },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "stdoutSnippet": {
+          "type": "string",
+          "description": "Truncated stdout for display."
+        },
+        "stderrSnippet": {
+          "type": "string",
+          "description": "Truncated stderr for display."
+        },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}
