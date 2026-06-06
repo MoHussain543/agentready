@@ -5,6 +5,8 @@ interface ResultsViewProps {
   repoPath: string;
   session: FeatureSessionInput;
   report: ReadinessReport;
+  isRunning: boolean;
+  error: string | null;
   onBack: () => void;
   onRerun: () => void;
 }
@@ -13,6 +15,8 @@ export function ResultsView({
   repoPath,
   session,
   report,
+  isRunning,
+  error,
   onBack,
   onRerun,
 }: ResultsViewProps) {
@@ -28,8 +32,17 @@ export function ResultsView({
           Generated {new Date(report.generatedAt).toLocaleString()} ·{" "}
           {report.checkSuite}
           {typeof report.durationMs === "number" ? ` · ${report.durationMs}ms` : ""}
+          {" · "}engine{" "}
+          {report.engineVersion}
         </p>
       </header>
+
+      {error && (
+        <div className="error-banner" role="alert">
+          <strong>Re-run failed</strong>
+          <p>{error}</p>
+        </div>
+      )}
 
       <div className="grid">
         <div className="card">
@@ -121,11 +134,16 @@ export function ResultsView({
       </div>
 
       <div className="actions">
-        <button type="button" className="secondary" onClick={onBack}>
+        <button
+          type="button"
+          className="secondary"
+          disabled={isRunning}
+          onClick={onBack}
+        >
           Edit session
         </button>
-        <button type="button" onClick={onRerun}>
-          Re-run check
+        <button type="button" disabled={isRunning} onClick={onRerun}>
+          {isRunning ? "Re-running..." : "Re-run check"}
         </button>
       </div>
     </section>

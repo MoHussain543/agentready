@@ -1,24 +1,48 @@
-// Tauri commands map to docs/architecture.md. Implementations are deferred.
+mod engine;
+mod models;
+mod storage;
+
+use models::{EngineRequest, FeatureSpec, ReadinessReport};
+use storage::{CurrentSession, RepoSessionState};
 
 #[tauri::command]
-fn open_repo(path: String) -> Result<String, String> {
-    Err(format!("open_repo not implemented: {path}"))
+fn run_readiness(request: EngineRequest) -> Result<ReadinessReport, String> {
+    engine::run_readiness(request)
 }
 
 #[tauri::command]
-fn run_readiness(path: String) -> Result<String, String> {
-    Err(format!("run_readiness not implemented: {path}"))
+fn init_repo_storage(repo_path: String) -> Result<RepoSessionState, String> {
+    storage::init(&repo_path)
 }
 
 #[tauri::command]
-fn get_session(path: String) -> Result<String, String> {
-    Err(format!("get_session not implemented: {path}"))
+fn save_feature_session(
+    repo_path: String,
+    feature_spec: FeatureSpec,
+) -> Result<RepoSessionState, String> {
+    storage::save_feature_session(&repo_path, feature_spec)
+}
+
+#[tauri::command]
+fn load_repo_session(repo_path: String) -> Result<Option<RepoSessionState>, String> {
+    storage::load(&repo_path)
+}
+
+#[tauri::command]
+fn record_readiness_run(repo_path: String, verdict: String) -> Result<CurrentSession, String> {
+    storage::record_readiness_run(&repo_path, verdict)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![open_repo, run_readiness, get_session])
+        .invoke_handler(tauri::generate_handler![
+            run_readiness,
+            init_repo_storage,
+            save_feature_session,
+            load_repo_session,
+            record_readiness_run
+        ])
         .run(tauri::generate_context!())
         .expect("error while running AgentReady desktop");
 }

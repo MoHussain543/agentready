@@ -249,3 +249,16 @@ button.secondary {
 code {
   font-size: 0.85rem;
 }
+
+.error-banner {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+
+.error-banner p {
+  margin: 0.35rem 0 0;
+}

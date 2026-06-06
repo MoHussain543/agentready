@@ -39,11 +39,17 @@ java -jar target/agentready-engine.jar   # stdin JSON protocol (stub)
 
 ### Desktop
 
+Build the engine first, then start the desktop app:
+
 ```bash
-cd apps/desktop
+cd engine && mvn package
+cd ../apps/desktop
 npm install
 npm run tauri dev
 ```
+
+The shell locates `engine/target/agentready-engine.jar` automatically in local dev.
+Override with `AGENTREADY_ENGINE_JAR` or `AGENTREADY_JAVA` if needed. See [apps/desktop/DEVELOPMENT.md](apps/desktop/DEVELOPMENT.md).
 
 ## Integration boundary
 

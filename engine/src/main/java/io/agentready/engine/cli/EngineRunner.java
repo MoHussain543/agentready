@@ -17,7 +17,7 @@ public final class EngineRunner {
     private final EngineHandler handler;
 
     public EngineRunner() {
-        this(JsonMapperFactory.create(), new MockReadinessRunner());
+        this(JsonMapperFactory.create(), new ReadinessRunner());
     }
 
     EngineRunner(ObjectMapper mapper, EngineHandler handler) {

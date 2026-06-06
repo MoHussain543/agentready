@@ -3,6 +3,8 @@ import type { FeatureSessionInput } from "../types";
 interface StartSessionViewProps {
   repoPath: string;
   session: FeatureSessionInput;
+  isRunning: boolean;
+  error: string | null;
   onSessionChange: (session: FeatureSessionInput) => void;
   onBack: () => void;
   onRunCheck: () => void;
@@ -11,12 +13,16 @@ interface StartSessionViewProps {
 export function StartSessionView({
   repoPath,
   session,
+  isRunning,
+  error,
   onSessionChange,
   onBack,
   onRunCheck,
 }: StartSessionViewProps) {
   const canRun =
-    session.title.trim().length > 0 && session.description.trim().length > 0;
+    session.title.trim().length > 0 &&
+    session.description.trim().length > 0 &&
+    !isRunning;
 
   return (
     <section className="view">
@@ -25,6 +31,13 @@ export function StartSessionView({
         <h1>Start feature session</h1>
         <p className="repo-path">{repoPath}</p>
       </header>
+
+      {error && (
+        <div className="error-banner" role="alert">
+          <strong>Readiness check failed</strong>
+          <p>{error}</p>
+        </div>
+      )}
 
       <div className="card">
         <h2>Original request</h2>
@@ -39,6 +52,7 @@ export function StartSessionView({
             type="text"
             value={session.title}
             placeholder="Return 404 for missing users"
+            disabled={isRunning}
             onChange={(e) =>
               onSessionChange({ ...session, title: e.target.value })
             }
@@ -51,6 +65,7 @@ export function StartSessionView({
             rows={5}
             value={session.description}
             placeholder="API should return 404 when user id is not found..."
+            disabled={isRunning}
             onChange={(e) =>
               onSessionChange({ ...session, description: e.target.value })
             }
@@ -58,11 +73,16 @@ export function StartSessionView({
         </label>
 
         <div className="actions">
-          <button type="button" className="secondary" onClick={onBack}>
+          <button
+            type="button"
+            className="secondary"
+            disabled={isRunning}
+            onClick={onBack}
+          >
             Back
           </button>
           <button type="button" disabled={!canRun} onClick={onRunCheck}>
-            Run readiness check
+            {isRunning ? "Running check..." : "Run readiness check"}
           </button>
         </div>
       </div>

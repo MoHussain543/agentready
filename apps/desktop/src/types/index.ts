@@ -95,5 +95,7 @@ export interface AppState {
   screen: AppScreen;
   repoPath: string;
   session: FeatureSessionInput;
+  featureSpec: import("./engine").FeatureSpec | null;
+  currentSession: import("../lib/storage").CurrentSession | null;
   report: ReadinessReport | null;
 }
