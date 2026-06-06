@@ -52,7 +52,7 @@ export function StartSessionView({
 
       {error && (
         <div className="error-banner" role="alert">
-          <strong>Readiness check failed</strong>
+          <strong>Could not run readiness check</strong>
           <p>{error}</p>
         </div>
       )}

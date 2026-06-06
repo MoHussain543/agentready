@@ -57,6 +57,10 @@
       "type": "string",
       "const": ".agentready/feature-spec.json"
     },
+    "testCommand": {
+      "type": ["string", "null"],
+      "description": "Repo-local shell command used for optional test execution; null if unset."
+    },
     "reportHistoryCount": {
       "type": "integer",
       "minimum": 0,

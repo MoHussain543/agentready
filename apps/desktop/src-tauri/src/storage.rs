@@ -205,21 +205,6 @@ pub fn list_reports(repo_path: &str) -> Result<Vec<ReportHistoryEntry>, String> 
     Ok(entries)
 }
 
-/// Record the outcome of a readiness run into session metadata (no report history yet).
-pub fn record_readiness_run(repo_path: &str, verdict: String) -> Result<CurrentSession, String> {
-    let repo = validated_repo(repo_path)?;
-    ensure_dirs(&repo)?;
-
-    let mut session = load_or_create_session(&repo)?;
-    let timestamp = now();
-    session.last_readiness_run_at = Some(timestamp.clone());
-    session.latest_report_verdict = Some(verdict);
-    session.last_accessed_at = timestamp;
-    write_json(&session_path(&repo), &session)?;
-
-    Ok(session)
-}
-
 fn load_or_create_session(repo: &Path) -> Result<CurrentSession, String> {
     let path = session_path(repo);
     let now = now();
@@ -454,19 +439,6 @@ mod tests {
     fn load_returns_none_when_uninitialized() {
         let repo = temp_git_repo("empty");
         assert!(load(repo.to_str().unwrap()).unwrap().is_none());
-        fs::remove_dir_all(&repo).unwrap();
-    }
-
-    #[test]
-    fn record_readiness_run_updates_verdict() {
-        let repo = temp_git_repo("verdict");
-        let repo_str = repo.to_str().unwrap();
-        init(repo_str).unwrap();
-
-        let session = record_readiness_run(repo_str, "NEEDS_REVIEW".to_string()).unwrap();
-        assert_eq!(session.latest_report_verdict.as_deref(), Some("NEEDS_REVIEW"));
-        assert!(session.last_readiness_run_at.is_some());
-
         fs::remove_dir_all(&repo).unwrap();
     }
 

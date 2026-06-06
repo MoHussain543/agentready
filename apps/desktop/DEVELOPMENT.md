@@ -53,20 +53,24 @@ The Tauri shell owns repo-local state under `.agentready/` (the Java engine stay
 | --- | --- | --- |
 | `.agentready/session.json` | shell | current session metadata (see `docs/schemas/current-session.schema.json`) |
 | `.agentready/feature-spec.json` | shell | current feature spec (see `docs/schemas/feature-spec.schema.json`) |
-| `.agentready/reports/`, `.agentready/cache/.gitkeep` | shell | created on init; report history not persisted yet |
+| `.agentready/reports/<timestamp>.json` | shell | one file per readiness run (full `ReadinessReport`) |
+| `.agentready/latest-report.json` | shell | copy of the most recent report (used for hydration) |
+| `.agentready/cache/.gitkeep` | shell | created on init |
 
 Tauri commands:
 
-- `init_repo_storage(repoPath)` — creates `.agentready/` if missing, seeds/loads `session.json`, returns `{ session, featureSpec }`.
+- `init_repo_storage(repoPath)` — creates `.agentready/` if missing, seeds/loads `session.json`, returns `{ session, featureSpec, latestReport }`.
 - `save_feature_session(repoPath, featureSpec)` — writes `feature-spec.json` and updates session pointers.
-- `load_repo_session(repoPath)` — returns `{ session, featureSpec }` or `null` if not initialized.
-- `record_readiness_run(repoPath, verdict)` — updates `lastReadinessRunAt` / `latestReportVerdict`.
+- `load_repo_session(repoPath)` — returns `{ session, featureSpec, latestReport }` or `null` if not initialized.
+- `set_test_command(repoPath, command)` — persists (or clears) the repo-local test command.
+- `save_report(repoPath, report)` — writes a timestamped report + `latest-report.json` and updates session pointers (`lastReadinessRunAt`, `latestReportVerdict`, `latestReportPath`, `reportHistoryCount`).
+- `load_latest_report(repoPath)` — returns the latest saved `ReadinessReport` or `null`.
+- `list_reports(repoPath)` — returns saved report history entries (newest first).
 
 Writes are atomic (temp file + rename). Missing files are handled gracefully.
 
 ### Temporary limitations
 
-- Engine report content is still mocked inside Java (no real git diff yet).
-- Report history is not written to disk; `latestReportPath` stays null and `reportHistoryCount` is 0.
 - Only a single current session + feature spec is persisted (no multi-session model).
+- Report history is read by parsing each file on demand (no separate index).
 - Vite-only `npm run dev` cannot call Tauri commands; use `npm run tauri dev`.

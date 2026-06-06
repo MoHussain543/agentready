@@ -72,16 +72,6 @@ export async function loadRepoSession(
   }
 }
 
-export async function recordReadinessRun(
-  repoPath: string,
-  verdict: Verdict,
-): Promise<CurrentSession> {
-  return invoke<CurrentSession>("record_readiness_run", {
-    repoPath: repoPath.trim(),
-    verdict,
-  });
-}
-
 export async function setTestCommand(
   repoPath: string,
   command: string | null,

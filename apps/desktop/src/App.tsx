@@ -169,7 +169,10 @@ function App() {
           onRunTestsChange={(runTests) =>
             setState((current) => ({ ...current, runTests }))
           }
-          onViewLatest={() => goTo("results")}
+          onViewLatest={() => {
+            setError(null);
+            goTo("results");
+          }}
           onBack={() => {
             setError(null);
             goTo("repo");

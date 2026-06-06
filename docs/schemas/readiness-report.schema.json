@@ -70,6 +70,10 @@
       "enum": ["READY_TO_COMMIT", "NOT_READY", "NEEDS_REVIEW"],
       "description": "Overall pre-commit recommendation."
     },
+    "verdictExplanation": {
+      "type": "string",
+      "description": "Short, human-readable one-line explanation of the verdict."
+    },
     "diffSummary": {
       "$ref": "#/$defs/DiffSummary"
     },

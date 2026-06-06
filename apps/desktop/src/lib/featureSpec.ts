@@ -82,20 +82,16 @@ export function extractExpectedKeywords(
   title: string,
   description: string,
 ): string[] {
-  const tokens = `${title} ${description}`
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .map((token) => token.trim())
-    .filter((token) => token.length > 2 && !STOP_WORDS.has(token));
+  const meaningful = (text: string): string[] =>
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length > 2 && !STOP_WORDS.has(token));
 
-  const titleTokens = title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter((token) => token.length > 0);
-
-  return [...new Set([...titleTokens, ...tokens])];
+  // Title terms first (they tend to be the most important), then description terms.
+  return [...new Set([...meaningful(title), ...meaningful(description)])];
 }
 
 export function extractRiskKeywords(text: string): string[] {

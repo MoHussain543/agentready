@@ -66,11 +66,28 @@ function normalizeReport(report: ReadinessReportWire): ReadinessReport {
 }
 
 function formatInvokeError(error: unknown): string {
-  if (typeof error === "string") {
-    return error;
+  const raw =
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+        ? error.message
+        : "";
+  return friendlyEngineError(raw);
+}
+
+/** Map raw engine error strings ("CODE: detail") to clear, user-facing copy. */
+function friendlyEngineError(raw: string): string {
+  if (!raw) {
+    return "Readiness check failed due to an unknown error.";
   }
-  if (error instanceof Error) {
-    return error.message;
+  if (raw.includes("NO_DIFF")) {
+    return "No uncommitted changes to check yet. Make some edits, then run AgentReady.";
   }
-  return "Readiness check failed due to an unknown error.";
+  if (raw.includes("INVALID_REPO")) {
+    return "This path is not a git repository. Open a folder that contains a .git directory.";
+  }
+  if (raw.includes("Failed to start Java engine") || raw.includes("agentready-engine.jar")) {
+    return `Could not start the verification engine. Build it with \`cd engine && mvn package\`, or set AGENTREADY_ENGINE_JAR. (${raw})`;
+  }
+  return raw;
 }

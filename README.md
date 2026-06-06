@@ -34,7 +34,9 @@ See [docs/free-v1-scope.md](docs/free-v1-scope.md) and [docs/architecture.md](do
 ```bash
 cd engine
 mvn package
-java -jar target/agentready-engine.jar   # stdin JSON protocol (stub)
+# Reads a JSON request on stdin and prints a JSON readiness report:
+echo '{"protocolVersion":"1.0","command":"run_readiness","repoPath":"/path/to/repo"}' \
+  | java -jar target/agentready-engine.jar
 ```
 
 ### Desktop

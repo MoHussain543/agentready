@@ -197,11 +197,7 @@ export function ResultsView({
           <ul className="history-list">
             {history.slice(0, 10).map((entry) => (
               <li key={entry.fileName}>
-                <span
-                  className={`verdict verdict-${entry.verdict.toLowerCase()} verdict-pill`}
-                >
-                  {entry.verdict}
-                </span>
+                <VerdictBadge verdict={entry.verdict} />
                 <span className="meta">
                   {new Date(entry.generatedAt).toLocaleString()}
                 </span>

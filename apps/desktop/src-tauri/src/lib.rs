@@ -29,11 +29,6 @@ fn load_repo_session(repo_path: String) -> Result<Option<RepoSessionState>, Stri
 }
 
 #[tauri::command]
-fn record_readiness_run(repo_path: String, verdict: String) -> Result<CurrentSession, String> {
-    storage::record_readiness_run(&repo_path, verdict)
-}
-
-#[tauri::command]
 fn set_test_command(
     repo_path: String,
     command: Option<String>,
@@ -64,7 +59,6 @@ pub fn run() {
             init_repo_storage,
             save_feature_session,
             load_repo_session,
-            record_readiness_run,
             set_test_command,
             save_report,
             load_latest_report,
