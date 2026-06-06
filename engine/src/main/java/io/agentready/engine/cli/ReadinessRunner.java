@@ -35,8 +35,8 @@ import java.util.Map;
 /**
  * Builds a readiness report from the real uncommitted git diff and the baseline rule engine.
  *
- * <p>Diff ingestion, git metadata, file classification, and the baseline rules are all real.
- * Spec keyword/status-code matching and test execution are deferred to later steps.
+ * <p>Diff ingestion, git metadata, file classification, and the baseline rule suite are all
+ * real. Test execution is still deferred to a later step.
  */
 public final class ReadinessRunner implements EngineHandler {
 
@@ -123,7 +123,7 @@ public final class ReadinessRunner implements EngineHandler {
 
         RuleContext ruleContext = new RuleContext(
                 request.repoPath(), changedFiles, classifier, addedLines, changedLines,
-                request.options());
+                request.options(), request.featureSpec());
 
         List<CheckResult> checks = new ArrayList<>();
         List<Finding> findings = new ArrayList<>();

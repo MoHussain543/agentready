@@ -17,6 +17,9 @@ public final class RuleEngine {
                 new DeletedTestFilesRule(),
                 new ConfigEnvDependencyRiskRule(),
                 new LargeDiffRule(),
-                new HardcodedSecretsRule());
+                new HardcodedSecretsRule(),
+                new SpecKeywordMatchRule(),
+                new StatusCodeMatchRule(),
+                new RiskKeywordPresenceRule());
     }
 }

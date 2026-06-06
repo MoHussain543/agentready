@@ -3,6 +3,7 @@ package io.agentready.engine.rules;
 import io.agentready.engine.diff.FileClassifier;
 import io.agentready.engine.model.ChangedFile;
 import io.agentready.engine.model.EngineOptions;
+import io.agentready.engine.model.FeatureSpec;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,9 @@ public final class RuleContext {
     private final Map<String, List<String>> addedLinesByPath;
     private final int totalChangedLines;
     private final EngineOptions options;
+    private final FeatureSpec featureSpec;
+
+    private String cachedCorpus;
 
     public RuleContext(
             String repoPath,
@@ -28,13 +32,15 @@ public final class RuleContext {
             FileClassifier classifier,
             Map<String, List<String>> addedLinesByPath,
             int totalChangedLines,
-            EngineOptions options) {
+            EngineOptions options,
+            FeatureSpec featureSpec) {
         this.repoPath = repoPath;
         this.changedFiles = List.copyOf(changedFiles);
         this.classifier = classifier;
         this.addedLinesByPath = addedLinesByPath;
         this.totalChangedLines = totalChangedLines;
         this.options = options;
+        this.featureSpec = featureSpec;
     }
 
     public String repoPath() {
@@ -69,5 +75,31 @@ public final class RuleContext {
             return options.largeDiffMaxLines();
         }
         return DEFAULT_MAX_LINES;
+    }
+
+    public FeatureSpec featureSpec() {
+        return featureSpec;
+    }
+
+    /**
+     * Lowercased, newline-joined search corpus of changed file paths and added line content.
+     * Built lazily and cached for spec-aware matching.
+     */
+    public String specCorpus() {
+        if (cachedCorpus == null) {
+            StringBuilder builder = new StringBuilder();
+            for (ChangedFile file : changedFiles) {
+                builder.append(file.path().toLowerCase()).append('\n');
+            }
+            if (addedLinesByPath != null) {
+                for (List<String> lines : addedLinesByPath.values()) {
+                    for (String line : lines) {
+                        builder.append(line.toLowerCase()).append('\n');
+                    }
+                }
+            }
+            cachedCorpus = builder.toString();
+        }
+        return cachedCorpus;
     }
 }

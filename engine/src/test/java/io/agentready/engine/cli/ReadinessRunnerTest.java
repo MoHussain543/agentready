@@ -10,13 +10,16 @@ import io.agentready.engine.model.CheckStatus;
 import io.agentready.engine.model.EngineOptions;
 import io.agentready.engine.model.EngineRequest;
 import io.agentready.engine.model.EngineResponse;
+import io.agentready.engine.model.FeatureSpec;
 import io.agentready.engine.model.ReadinessReport;
 import io.agentready.engine.model.Verdict;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -72,7 +75,18 @@ class ReadinessRunnerTest {
     }
 
     private static EngineRequest request(String repoPath, EngineOptions options) {
-        return new EngineRequest("1.0", "run_readiness", repoPath, null, options);
+        return request(repoPath, options, null);
+    }
+
+    private static EngineRequest request(String repoPath, EngineOptions options, FeatureSpec spec) {
+        return new EngineRequest("1.0", "run_readiness", repoPath, spec, options);
+    }
+
+    private static FeatureSpec spec(
+            List<String> keywords, List<Integer> statusCodes, List<String> riskKeywords) {
+        return new FeatureSpec(
+                "1.0", UUID.randomUUID(), "Test feature", "A test feature description",
+                keywords, statusCodes, riskKeywords, Instant.now(), Instant.now());
     }
 
     private static CheckResult check(ReadinessReport report, String id) {
@@ -269,6 +283,113 @@ class ReadinessRunnerTest {
 
         assertEquals("error", response.status());
         assertEquals("INTERNAL", response.error().code());
+    }
+
+    @Test
+    void specAwareChecksSkipWhenNoSpec() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/App.java", ChangeType.MODIFIED));
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(CheckStatus.skip, check(report, "spec-keyword-match").status());
+        assertEquals(CheckStatus.skip, check(report, "status-code-match").status());
+        assertEquals(CheckStatus.skip, check(report, "risk-keyword-presence").status());
+    }
+
+    @Test
+    void matchingStatusCodePasses() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/Handler.java", ChangeType.MODIFIED));
+        git.addedLines = Map.of(
+                "src/Handler.java", List.of("return ResponseEntity.status(404).build();"));
+        FeatureSpec spec = spec(List.of(), List.of(404), List.of());
+
+        ReadinessReport report =
+                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
+
+        assertEquals(CheckStatus.pass, check(report, "status-code-match").status());
+    }
+
+    @Test
+    void missingStatusCodeFailsAndDrivesNotReady() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/Handler.java", ChangeType.MODIFIED));
+        git.addedLines = Map.of("src/Handler.java", List.of("return ok();"));
+        FeatureSpec spec = spec(List.of(), List.of(410), List.of());
+
+        ReadinessReport report =
+                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
+
+        assertEquals(CheckStatus.fail, check(report, "status-code-match").status());
+        assertEquals(Verdict.NOT_READY, report.verdict());
+        assertTrue(report.findings().stream()
+                .anyMatch(f -> f.checkId().equals("status-code-match")
+                        && f.message().contains("410")));
+    }
+
+    @Test
+    void keywordCoverageStrongPasses() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/checkout/PaymentCart.java", ChangeType.MODIFIED));
+        FeatureSpec spec = spec(List.of("checkout", "payment", "cart"), List.of(), List.of());
+
+        ReadinessReport report =
+                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
+
+        assertEquals(CheckStatus.pass, check(report, "spec-keyword-match").status());
+        assertTrue(report.passedChecks().contains("spec-keyword-match"));
+    }
+
+    @Test
+    void keywordCoveragePartialWarns() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/checkout/Handler.java", ChangeType.MODIFIED));
+        FeatureSpec spec = spec(List.of("checkout", "refund", "invoice"), List.of(), List.of());
+
+        ReadinessReport report =
+                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
+
+        assertEquals(CheckStatus.warn, check(report, "spec-keyword-match").status());
+    }
+
+    @Test
+    void keywordCoverageAbsentFromStrongSpecFails() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/App.java", ChangeType.MODIFIED));
+        FeatureSpec spec = spec(List.of("alpha", "beta", "gamma"), List.of(), List.of());
+
+        ReadinessReport report =
+                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
+
+        assertEquals(CheckStatus.fail, check(report, "spec-keyword-match").status());
+        assertEquals(Verdict.NOT_READY, report.verdict());
+    }
+
+    @Test
+    void riskKeywordAbsentWarns() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(
+                new ChangedFile("src/App.java", ChangeType.MODIFIED),
+                new ChangedFile("src/AppTest.java", ChangeType.MODIFIED));
+        FeatureSpec spec = spec(List.of(), List.of(), List.of("payment"));
+
+        ReadinessReport report =
+                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
+
+        assertEquals(CheckStatus.warn, check(report, "risk-keyword-presence").status());
+    }
+
+    @Test
+    void riskKeywordPresentPasses() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/payment/Charge.java", ChangeType.MODIFIED));
+        FeatureSpec spec = spec(List.of(), List.of(), List.of("payment"));
+
+        ReadinessReport report =
+                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
+
+        assertEquals(CheckStatus.pass, check(report, "risk-keyword-presence").status());
     }
 
     @Test
