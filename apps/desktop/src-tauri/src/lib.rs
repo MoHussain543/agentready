@@ -33,6 +33,14 @@ fn record_readiness_run(repo_path: String, verdict: String) -> Result<CurrentSes
     storage::record_readiness_run(&repo_path, verdict)
 }
 
+#[tauri::command]
+fn set_test_command(
+    repo_path: String,
+    command: Option<String>,
+) -> Result<CurrentSession, String> {
+    storage::set_test_command(&repo_path, command)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -41,7 +49,8 @@ pub fn run() {
             init_repo_storage,
             save_feature_session,
             load_repo_session,
-            record_readiness_run
+            record_readiness_run,
+            set_test_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running AgentReady desktop");

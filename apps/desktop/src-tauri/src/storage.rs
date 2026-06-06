@@ -31,6 +31,7 @@ pub struct CurrentSession {
     pub feature_spec_path: String,
     pub report_history_count: i64,
     pub app_version: Option<String>,
+    pub test_command: Option<String>,
 }
 
 impl Default for CurrentSession {
@@ -48,6 +49,7 @@ impl Default for CurrentSession {
             feature_spec_path: FEATURE_SPEC_REL.to_string(),
             report_history_count: 0,
             app_version: None,
+            test_command: None,
         }
     }
 }
@@ -104,6 +106,26 @@ pub fn load(repo_path: &str) -> Result<Option<RepoSessionState>, String> {
             }))
         }
     }
+}
+
+/// Persist the repo-local test command. An empty/blank command clears it.
+pub fn set_test_command(
+    repo_path: &str,
+    command: Option<String>,
+) -> Result<CurrentSession, String> {
+    let repo = validated_repo(repo_path)?;
+    ensure_dirs(&repo)?;
+
+    let normalized = command
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+
+    let mut session = load_or_create_session(&repo)?;
+    session.test_command = normalized;
+    session.last_accessed_at = now();
+    write_json(&session_path(&repo), &session)?;
+
+    Ok(session)
 }
 
 /// Record the outcome of a readiness run into session metadata (no report history yet).
@@ -342,6 +364,24 @@ mod tests {
         let session = record_readiness_run(repo_str, "NEEDS_REVIEW".to_string()).unwrap();
         assert_eq!(session.latest_report_verdict.as_deref(), Some("NEEDS_REVIEW"));
         assert!(session.last_readiness_run_at.is_some());
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn set_test_command_persists_and_clears() {
+        let repo = temp_git_repo("testcmd");
+        let repo_str = repo.to_str().unwrap();
+        init(repo_str).unwrap();
+
+        let session = set_test_command(repo_str, Some("  mvn test  ".to_string())).unwrap();
+        assert_eq!(session.test_command.as_deref(), Some("mvn test"));
+
+        let reloaded = load(repo_str).unwrap().unwrap();
+        assert_eq!(reloaded.session.test_command.as_deref(), Some("mvn test"));
+
+        let cleared = set_test_command(repo_str, Some("   ".to_string())).unwrap();
+        assert!(cleared.test_command.is_none());
 
         fs::remove_dir_all(&repo).unwrap();
     }

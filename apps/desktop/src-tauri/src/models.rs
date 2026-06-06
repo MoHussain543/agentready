@@ -32,6 +32,8 @@ pub struct EngineOptions {
     pub large_diff_max_files: Option<i32>,
     pub include_staged: Option<bool>,
     pub include_unstaged: Option<bool>,
+    pub run_tests: Option<bool>,
+    pub test_command: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -8,7 +8,7 @@ import type {
   ReadinessReportWire,
 } from "../types/engine";
 
-const DEFAULT_OPTIONS: EngineRequest["options"] = {
+const BASE_OPTIONS: EngineRequest["options"] = {
   checkSuite: "free-v1-precommit",
   largeDiffMaxLines: 2000,
   largeDiffMaxFiles: 50,
@@ -16,17 +16,27 @@ const DEFAULT_OPTIONS: EngineRequest["options"] = {
   includeUnstaged: true,
 };
 
+export interface TestExecutionOptions {
+  runTests?: boolean;
+  testCommand?: string | null;
+}
+
 export function buildEngineRequest(
   repoPath: string,
   session: FeatureSessionInput,
   featureSpec?: FeatureSpec,
+  testOptions?: TestExecutionOptions,
 ): EngineRequest {
   return {
     protocolVersion: "1.0",
     command: "run_readiness",
     repoPath: repoPath.trim(),
     featureSpec: featureSpec ?? buildFeatureSpec(session),
-    options: DEFAULT_OPTIONS,
+    options: {
+      ...BASE_OPTIONS,
+      runTests: testOptions?.runTests ?? false,
+      testCommand: testOptions?.testCommand?.trim() || undefined,
+    },
   };
 }
 
@@ -34,8 +44,9 @@ export async function runReadinessCheck(
   repoPath: string,
   session: FeatureSessionInput,
   featureSpec?: FeatureSpec,
+  testOptions?: TestExecutionOptions,
 ): Promise<ReadinessReport> {
-  const request = buildEngineRequest(repoPath, session, featureSpec);
+  const request = buildEngineRequest(repoPath, session, featureSpec, testOptions);
 
   try {
     const report = await invoke<ReadinessReportWire>("run_readiness", {

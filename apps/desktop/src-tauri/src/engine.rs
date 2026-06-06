@@ -149,6 +149,8 @@ mod tests {
                 large_diff_max_files: None,
                 include_staged: Some(true),
                 include_unstaged: Some(true),
+                run_tests: Some(false),
+                test_command: None,
             }),
         };
 

@@ -27,6 +27,8 @@ export interface EngineOptions {
   largeDiffMaxFiles?: number;
   includeStaged?: boolean;
   includeUnstaged?: boolean;
+  runTests?: boolean;
+  testCommand?: string;
 }
 
 export interface EngineRequest {

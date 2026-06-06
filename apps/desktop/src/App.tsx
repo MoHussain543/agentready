@@ -5,6 +5,7 @@ import {
   initRepoStorage,
   recordReadinessRun,
   saveFeatureSession,
+  setTestCommand,
 } from "./lib/storage";
 import type { AppScreen, AppState, FeatureSessionInput } from "./types";
 import { RepoSelectionView } from "./views/RepoSelectionView";
@@ -28,6 +29,8 @@ function App() {
     featureSpec: null,
     currentSession: null,
     report: null,
+    testCommand: "",
+    runTests: false,
   });
   const [isRunning, setIsRunning] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
@@ -54,6 +57,7 @@ function App() {
         session: hydratedSession,
         featureSpec: repoState.featureSpec,
         currentSession: repoState.session,
+        testCommand: repoState.session.testCommand ?? "",
         screen: "session",
       }));
     } catch (initError) {
@@ -68,15 +72,22 @@ function App() {
   const runCheck = async (navigateToResults: boolean) => {
     const trimmedRepoPath = state.repoPath.trim();
     const featureSpec = buildFeatureSpec(state.session, state.featureSpec);
+    const trimmedTestCommand = state.testCommand.trim();
     setIsRunning(true);
     setError(null);
 
     try {
       const repoState = await saveFeatureSession(trimmedRepoPath, featureSpec);
+      await setTestCommand(trimmedRepoPath, trimmedTestCommand || null);
+
       const report = await runReadinessCheck(
         trimmedRepoPath,
         state.session,
         featureSpec,
+        {
+          runTests: state.runTests,
+          testCommand: trimmedTestCommand || null,
+        },
       );
 
       let currentSession = repoState.session;
@@ -127,10 +138,18 @@ function App() {
         <StartSessionView
           repoPath={state.repoPath}
           session={state.session}
+          testCommand={state.testCommand}
+          runTests={state.runTests}
           isRunning={isRunning}
           error={error}
           onSessionChange={(session) =>
             setState((current) => ({ ...current, session }))
+          }
+          onTestCommandChange={(testCommand) =>
+            setState((current) => ({ ...current, testCommand }))
+          }
+          onRunTestsChange={(runTests) =>
+            setState((current) => ({ ...current, runTests }))
           }
           onBack={() => {
             setError(null);

@@ -16,6 +16,7 @@ export interface CurrentSession {
   featureSpecPath: string;
   reportHistoryCount?: number | null;
   appVersion?: string | null;
+  testCommand?: string | null;
 }
 
 export interface RepoSessionState {
@@ -71,6 +72,20 @@ export async function recordReadinessRun(
     repoPath: repoPath.trim(),
     verdict,
   });
+}
+
+export async function setTestCommand(
+  repoPath: string,
+  command: string | null,
+): Promise<CurrentSession> {
+  try {
+    return await invoke<CurrentSession>("set_test_command", {
+      repoPath: repoPath.trim(),
+      command: command && command.trim().length > 0 ? command.trim() : null,
+    });
+  } catch (error) {
+    throw new Error(formatError(error, "Failed to save the test command."));
+  }
 }
 
 function formatError(error: unknown, fallback: string): string {

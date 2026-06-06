@@ -5,4 +5,6 @@ public record EngineOptions(
         Integer largeDiffMaxLines,
         Integer largeDiffMaxFiles,
         Boolean includeStaged,
-        Boolean includeUnstaged) {}
+        Boolean includeUnstaged,
+        Boolean runTests,
+        String testCommand) {}

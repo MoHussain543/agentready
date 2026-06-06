@@ -98,4 +98,6 @@ export interface AppState {
   featureSpec: import("./engine").FeatureSpec | null;
   currentSession: import("../lib/storage").CurrentSession | null;
   report: ReadinessReport | null;
+  testCommand: string;
+  runTests: boolean;
 }

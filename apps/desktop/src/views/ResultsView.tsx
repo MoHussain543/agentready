@@ -121,10 +121,26 @@ export function ResultsView({
         <div className="card">
           <h2>Test result</h2>
           <p>
-            {report.testResult.ran ? "Ran" : "Not run"} · status:{" "}
-            {report.testResult.status}
+            <span className={`status status-${report.testResult.status}`}>
+              {report.testResult.status}
+            </span>
+            {report.testResult.ran ? " Tests ran" : " Tests not run"}
           </p>
+          {report.testResult.command && (
+            <p className="meta">
+              Command: <code>{report.testResult.command}</code>
+              {typeof report.testResult.exitCode === "number"
+                ? ` · exit ${report.testResult.exitCode}`
+                : ""}
+              {typeof report.testResult.durationMs === "number"
+                ? ` · ${report.testResult.durationMs}ms`
+                : ""}
+            </p>
+          )}
           {report.testResult.message && <p>{report.testResult.message}</p>}
+          {report.testResult.stdoutSnippet && (
+            <pre className="test-output">{report.testResult.stdoutSnippet}</pre>
+          )}
         </div>
       )}
 

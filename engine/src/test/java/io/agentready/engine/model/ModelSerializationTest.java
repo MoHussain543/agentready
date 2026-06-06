@@ -72,7 +72,7 @@ class ModelSerializationTest {
                         List.of(),
                         Instant.parse("2026-06-06T16:00:00Z"),
                         Instant.parse("2026-06-06T16:00:00Z")),
-                new EngineOptions("free-v1-precommit", 2000, 50, true, true));
+                new EngineOptions("free-v1-precommit", 2000, 50, true, true, true, "mvn test"));
 
         EngineResponse response = EngineResponse.ok("1.0", sampleReport());
 

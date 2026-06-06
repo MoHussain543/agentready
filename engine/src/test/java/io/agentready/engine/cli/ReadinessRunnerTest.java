@@ -1,6 +1,7 @@
 package io.agentready.engine.cli;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.agentready.engine.exec.TestRunner;
 import io.agentready.engine.git.GitService;
 import io.agentready.engine.json.JsonMapperFactory;
 import io.agentready.engine.model.ChangeType;
@@ -12,6 +13,8 @@ import io.agentready.engine.model.EngineRequest;
 import io.agentready.engine.model.EngineResponse;
 import io.agentready.engine.model.FeatureSpec;
 import io.agentready.engine.model.ReadinessReport;
+import io.agentready.engine.model.TestResult;
+import io.agentready.engine.model.TestResultStatus;
 import io.agentready.engine.model.Verdict;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -87,6 +91,28 @@ class ReadinessRunnerTest {
         return new FeatureSpec(
                 "1.0", UUID.randomUUID(), "Test feature", "A test feature description",
                 keywords, statusCodes, riskKeywords, Instant.now(), Instant.now());
+    }
+
+    private static EngineOptions runTestsOptions(String command) {
+        return new EngineOptions(null, null, null, null, null, true, command);
+    }
+
+    private static TestRunner fixedRunner(TestResult result) {
+        return new TestRunner() {
+            @Override
+            public TestResult run(Path repo, String command) {
+                return result;
+            }
+        };
+    }
+
+    /** Repo with a production file and a test file, so only test-execution drives the verdict. */
+    private static FakeGitService gitWithTestedChange() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(
+                new ChangedFile("src/App.java", ChangeType.MODIFIED),
+                new ChangedFile("src/AppTest.java", ChangeType.MODIFIED));
+        return git;
     }
 
     private static CheckResult check(ReadinessReport report, String id) {
@@ -157,7 +183,7 @@ class ReadinessRunnerTest {
                 new ChangedFile("a.java", ChangeType.MODIFIED),
                 new ChangedFile("b.java", ChangeType.MODIFIED),
                 new ChangedFile("AppTest.java", ChangeType.ADDED));
-        EngineOptions options = new EngineOptions("free-v1-precommit", 1, 1, true, true);
+        EngineOptions options = new EngineOptions("free-v1-precommit", 1, 1, true, true, false, null);
 
         ReadinessReport report =
                 new ReadinessRunner(git).handle(request("/tmp/repo", options)).report();
@@ -390,6 +416,72 @@ class ReadinessRunnerTest {
                 new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
 
         assertEquals(CheckStatus.pass, check(report, "risk-keyword-presence").status());
+    }
+
+    @Test
+    void testsNotRequestedStaySkipped() {
+        ReadinessReport report =
+                new ReadinessRunner(gitWithTestedChange()).handle(request("/tmp/repo", null)).report();
+
+        assertFalse(report.testResult().ran());
+        assertEquals(TestResultStatus.skip, report.testResult().status());
+        assertTrue(report.checks().stream().noneMatch(c -> c.id().equals("tests")));
+    }
+
+    @Test
+    void testsRequestedPassingIncludesPassResult() {
+        TestRunner runner = fixedRunner(new TestResult(
+                true, TestResultStatus.pass, "mvn test", 0, 1200, "BUILD SUCCESS", null,
+                "Tests passed"));
+
+        ReadinessReport report = new ReadinessRunner(gitWithTestedChange(), runner)
+                .handle(request("/tmp/repo", runTestsOptions("mvn test"))).report();
+
+        assertTrue(report.testResult().ran());
+        assertEquals(TestResultStatus.pass, report.testResult().status());
+        assertEquals("mvn test", report.testResult().command());
+        assertEquals(CheckStatus.pass, check(report, "tests").status());
+        assertEquals(Verdict.READY_TO_COMMIT, report.verdict());
+    }
+
+    @Test
+    void testsRequestedFailingDrivesNotReady() {
+        TestRunner runner = fixedRunner(new TestResult(
+                true, TestResultStatus.fail, "npm test", 1, 800, "1 test failed", null,
+                "Tests failed with exit code 1"));
+
+        ReadinessReport report = new ReadinessRunner(gitWithTestedChange(), runner)
+                .handle(request("/tmp/repo", runTestsOptions("npm test"))).report();
+
+        assertEquals(TestResultStatus.fail, report.testResult().status());
+        assertEquals(CheckStatus.fail, check(report, "tests").status());
+        assertEquals(Verdict.NOT_READY, report.verdict());
+    }
+
+    @Test
+    void testsRequestedWithoutCommandSurfacesWarning() {
+        ReadinessReport report = new ReadinessRunner(gitWithTestedChange())
+                .handle(request("/tmp/repo", runTestsOptions(null))).report();
+
+        assertFalse(report.testResult().ran());
+        assertEquals(TestResultStatus.warn, report.testResult().status());
+        assertNull(report.testResult().command());
+        assertEquals(CheckStatus.warn, check(report, "tests").status());
+        assertEquals(Verdict.NEEDS_REVIEW, report.verdict());
+    }
+
+    @Test
+    void testProcessErrorSurfacesAsWarning() {
+        TestRunner runner = fixedRunner(new TestResult(
+                true, TestResultStatus.error, "bogus-cmd", null, 5, null, null,
+                "Could not start test command"));
+
+        ReadinessReport report = new ReadinessRunner(gitWithTestedChange(), runner)
+                .handle(request("/tmp/repo", runTestsOptions("bogus-cmd"))).report();
+
+        assertEquals(TestResultStatus.error, report.testResult().status());
+        assertEquals(CheckStatus.warn, check(report, "tests").status());
+        assertEquals(Verdict.NEEDS_REVIEW, report.verdict());
     }
 
     @Test

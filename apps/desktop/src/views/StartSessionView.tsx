@@ -3,9 +3,13 @@ import type { FeatureSessionInput } from "../types";
 interface StartSessionViewProps {
   repoPath: string;
   session: FeatureSessionInput;
+  testCommand: string;
+  runTests: boolean;
   isRunning: boolean;
   error: string | null;
   onSessionChange: (session: FeatureSessionInput) => void;
+  onTestCommandChange: (testCommand: string) => void;
+  onRunTestsChange: (runTests: boolean) => void;
   onBack: () => void;
   onRunCheck: () => void;
 }
@@ -13,9 +17,13 @@ interface StartSessionViewProps {
 export function StartSessionView({
   repoPath,
   session,
+  testCommand,
+  runTests,
   isRunning,
   error,
   onSessionChange,
+  onTestCommandChange,
+  onRunTestsChange,
   onBack,
   onRunCheck,
 }: StartSessionViewProps) {
@@ -72,6 +80,38 @@ export function StartSessionView({
           />
         </label>
 
+      </div>
+
+      <div className="card">
+        <h2>Local tests (optional)</h2>
+        <p className="hint">
+          Configure a single test command to run as part of the check. The
+          command runs locally in your repo; failing tests block the commit.
+        </p>
+
+        <label className="field">
+          <span>Test command</span>
+          <input
+            type="text"
+            value={testCommand}
+            placeholder="mvn test"
+            disabled={isRunning}
+            onChange={(e) => onTestCommandChange(e.target.value)}
+          />
+        </label>
+
+        <label className="checkbox-field">
+          <input
+            type="checkbox"
+            checked={runTests}
+            disabled={isRunning}
+            onChange={(e) => onRunTestsChange(e.target.checked)}
+          />
+          <span>Run tests with this check</span>
+        </label>
+      </div>
+
+      <div className="card">
         <div className="actions">
           <button
             type="button"
@@ -82,7 +122,11 @@ export function StartSessionView({
             Back
           </button>
           <button type="button" disabled={!canRun} onClick={onRunCheck}>
-            {isRunning ? "Running check..." : "Run readiness check"}
+            {isRunning
+              ? "Running check..."
+              : runTests
+                ? "Run check with tests"
+                : "Run readiness check"}
           </button>
         </div>
       </div>
