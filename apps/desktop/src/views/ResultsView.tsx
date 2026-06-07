@@ -1,27 +1,36 @@
 import { useState } from "react";
 import { VerdictBadge } from "../components/VerdictBadge";
+import type { ReportHistoryEntry } from "../lib/storage";
 import type { FeatureSessionInput, ReadinessReport } from "../types";
 
 interface ResultsViewProps {
   repoPath: string;
   session: FeatureSessionInput;
   report: ReadinessReport;
+  history: ReportHistoryEntry[];
+  isLatestReport: boolean;
   latestReportPath: string | null;
   isRunning: boolean;
+  isSelectingReport: boolean;
   error: string | null;
   onBack: () => void;
   onRerun: () => void;
+  onSelectReport: (entry: ReportHistoryEntry) => void;
 }
 
 export function ResultsView({
   repoPath,
   session,
   report,
+  history,
+  isLatestReport,
   latestReportPath,
   isRunning,
+  isSelectingReport,
   error,
   onBack,
   onRerun,
+  onSelectReport,
 }: ResultsViewProps) {
   const [copied, setCopied] = useState(false);
 
@@ -53,7 +62,12 @@ export function ResultsView({
           {" · "}engine{" "}
           {report.engineVersion}
         </p>
-        {latestReportPath && (
+        {!isLatestReport && (
+          <p className="archived-note">
+            Archived report — not the latest saved check.
+          </p>
+        )}
+        {isLatestReport && latestReportPath && (
           <p className="saved-note">
             Saved locally to <code>{latestReportPath}</code>
           </p>
@@ -85,14 +99,6 @@ export function ResultsView({
             <span className="summary-label">Failures</span>
             <strong>{report.summary.fail}</strong>
           </div>
-          <div className="summary-stat summary-stat-pass">
-            <span className="summary-label">Passes</span>
-            <strong>{report.summary.pass}</strong>
-          </div>
-          <div className="summary-stat summary-stat-skip">
-            <span className="summary-label">Skips</span>
-            <strong>{report.summary.skip}</strong>
-          </div>
         </div>
       </div>
 
@@ -116,7 +122,7 @@ export function ResultsView({
           <DiffList label="Deleted" paths={report.diffSummary.deleted} />
           <p className="stat-line">
             {report.diffSummary.totalFiles} files ·{" "}
-            {report.diffSummary.totalChangedLines} changed lines
+            <strong>{report.diffSummary.totalChangedLines}</strong> changed lines
           </p>
         </div>
       </div>
@@ -206,6 +212,35 @@ export function ResultsView({
         <pre className="repair-prompt">{report.repairPrompt}</pre>
       </div>
 
+      {history.length > 0 && (
+        <div className="card">
+          <h2>Report history</h2>
+          <ul className="history-list">
+            {history.slice(0, 10).map((entry) => {
+              const isCurrent = entry.generatedAt === report.generatedAt;
+              return (
+                <li key={entry.fileName}>
+                  <button
+                    type="button"
+                    className={`history-entry${isCurrent ? " history-entry-current" : ""}`}
+                    disabled={isCurrent || isSelectingReport || isRunning}
+                    onClick={() => onSelectReport(entry)}
+                  >
+                    <VerdictBadge verdict={entry.verdict} />
+                    <span className="meta">
+                      {new Date(entry.generatedAt).toLocaleString()}
+                    </span>
+                    {isCurrent && (
+                      <span className="history-entry-viewing">Viewing</span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       <div className="actions">
         <button
           type="button"
@@ -228,10 +263,8 @@ function DiffList({ label, paths }: { label: string; paths: string[] }) {
     return null;
   }
 
-  const tone = label.toLowerCase();
-
   return (
-    <div className={`diff-group diff-group-${tone}`}>
+    <div className="diff-group">
       <h3>{label}</h3>
       <ul>
         {paths.map((path) => (

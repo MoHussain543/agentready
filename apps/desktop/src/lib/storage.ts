@@ -112,6 +112,20 @@ export async function loadLatestReport(
   }
 }
 
+export async function loadReportByPath(
+  repoPath: string,
+  reportPath: string,
+): Promise<ReadinessReport> {
+  try {
+    return await invoke<ReadinessReport>("load_report_by_path", {
+      repoPath: repoPath.trim(),
+      reportPath,
+    });
+  } catch (error) {
+    throw new Error(formatError(error, "Failed to load the selected report."));
+  }
+}
+
 export async function listReports(
   repoPath: string,
 ): Promise<ReportHistoryEntry[]> {

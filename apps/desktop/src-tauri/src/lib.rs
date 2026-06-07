@@ -47,6 +47,14 @@ fn load_latest_report(repo_path: String) -> Result<Option<ReadinessReport>, Stri
 }
 
 #[tauri::command]
+fn load_report_by_path(
+    repo_path: String,
+    report_path: String,
+) -> Result<ReadinessReport, String> {
+    storage::load_report_by_path(&repo_path, &report_path)
+}
+
+#[tauri::command]
 fn list_reports(repo_path: String) -> Result<Vec<ReportHistoryEntry>, String> {
     storage::list_reports(&repo_path)
 }
@@ -63,6 +71,7 @@ pub fn run() {
             set_test_command,
             save_report,
             load_latest_report,
+            load_report_by_path,
             list_reports
         ])
         .run(tauri::generate_context!())

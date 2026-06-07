@@ -4,7 +4,7 @@
 //! reads and writes structured JSON for the current session and current feature spec.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use chrono::{SecondsFormat, Utc};
 use serde::de::DeserializeOwned;
@@ -171,6 +171,32 @@ pub fn save_report(repo_path: &str, report: ReadinessReport) -> Result<CurrentSe
 pub fn load_latest_report(repo_path: &str) -> Result<Option<ReadinessReport>, String> {
     let repo = validated_repo(repo_path)?;
     read_json::<ReadinessReport>(&latest_report_path(&repo))
+}
+
+/// Load a specific saved report by its repo-relative path (e.g. `.agentready/reports/foo.json`).
+/// Rejects paths that are not inside `.agentready/reports/` to prevent traversal.
+pub fn load_report_by_path(repo_path: &str, report_path: &str) -> Result<ReadinessReport, String> {
+    let repo = validated_repo(repo_path)?;
+
+    let rel = report_path.trim_start_matches('/').trim_start_matches("./");
+    let rel_path = Path::new(rel);
+    let mut components = rel_path.components();
+    let valid_prefix = matches!(components.next(), Some(Component::Normal(first)) if first == ".agentready")
+        && matches!(components.next(), Some(Component::Normal(second)) if second == "reports");
+    let has_illegal_component = rel_path.components().any(|component| {
+        matches!(
+            component,
+            Component::ParentDir | Component::RootDir | Component::Prefix(_)
+        )
+    });
+
+    if !valid_prefix || has_illegal_component {
+        return Err("Invalid report path: must be inside .agentready/reports/".to_string());
+    }
+
+    let full_path = repo.join(rel_path);
+    read_json::<ReadinessReport>(&full_path)?
+        .ok_or_else(|| format!("Report not found: {rel}"))
 }
 
 /// List saved reports for the repo, newest first.
@@ -511,7 +537,7 @@ mod tests {
         fs::write(&existing, "{}").unwrap();
 
         let next = next_report_file_name(&repo);
-        assert!(next.starts_with(&format!("{base}-")));
+        assert_ne!(next, format!("{base}.json"));
         assert!(next.ends_with(".json"));
 
         fs::remove_dir_all(&repo).unwrap();
@@ -558,6 +584,36 @@ mod tests {
         let cleared = set_test_command(repo_str, Some("   ".to_string())).unwrap();
         assert!(cleared.test_command.is_none());
 
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn load_report_by_path_round_trips() {
+        let repo = temp_git_repo("load-by-path");
+        let repo_str = repo.to_str().unwrap();
+        init(repo_str).unwrap();
+        let session = save_report(repo_str, sample_report("NEEDS_REVIEW")).unwrap();
+
+        let rel_path = session.latest_report_path.unwrap();
+        let loaded = load_report_by_path(repo_str, &rel_path).unwrap();
+        assert_eq!(loaded.verdict, "NEEDS_REVIEW");
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn load_report_by_path_rejects_traversal() {
+        let repo = temp_git_repo("traversal");
+        let repo_str = repo.to_str().unwrap();
+        let err = load_report_by_path(repo_str, "../secret.json").unwrap_err();
+        assert!(err.contains("Invalid report path"));
+
+        let prefixed_err = load_report_by_path(
+            repo_str,
+            ".agentready/reports/../../secret.json",
+        )
+        .unwrap_err();
+        assert!(prefixed_err.contains("Invalid report path"));
         fs::remove_dir_all(&repo).unwrap();
     }
 

@@ -4,6 +4,8 @@ import { runReadinessCheck } from "./lib/readiness";
 import {
   initRepoStorage,
   listReports,
+  loadLatestReport,
+  loadReportByPath,
   saveFeatureSession,
   saveReport,
   setTestCommand,
@@ -31,12 +33,14 @@ function App() {
     featureSpec: null,
     currentSession: null,
     report: null,
+    isLatestReport: false,
     history: [],
     testCommand: "",
     runTests: false,
   });
   const [isRunning, setIsRunning] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
+  const [isSelectingReport, setIsSelectingReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const goTo = (screen: AppScreen) => {
@@ -72,6 +76,7 @@ function App() {
         featureSpec: repoState.featureSpec,
         currentSession: repoState.session,
         report: repoState.latestReport,
+        isLatestReport: repoState.latestReport !== null,
         history,
         testCommand: repoState.session.testCommand ?? "",
         screen: "session",
@@ -126,6 +131,7 @@ function App() {
         featureSpec,
         currentSession,
         report,
+        isLatestReport: true,
         history,
         screen: navigateToResults ? "results" : current.screen,
       }));
@@ -133,6 +139,20 @@ function App() {
       setError(errorMessage(checkError, "Readiness check failed."));
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  const handleSelectReport = async (entry: ReportHistoryEntry) => {
+    setIsSelectingReport(true);
+    setError(null);
+    try {
+      const report = await loadReportByPath(state.repoPath, entry.path);
+      setState((current) => ({ ...current, report, isLatestReport: false }));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (loadError) {
+      setError(errorMessage(loadError, "Failed to load the selected report."));
+    } finally {
+      setIsSelectingReport(false);
     }
   };
 
@@ -169,9 +189,25 @@ function App() {
           onRunTestsChange={(runTests) =>
             setState((current) => ({ ...current, runTests }))
           }
-          onViewLatest={() => {
+          onViewLatest={async () => {
             setError(null);
-            goTo("results");
+            try {
+              const latestReport = await loadLatestReport(state.repoPath);
+              if (!latestReport) {
+                setError("No saved report is available for this repository yet.");
+                return;
+              }
+              setState((current) => ({
+                ...current,
+                report: latestReport,
+                screen: "results",
+                isLatestReport: true,
+              }));
+            } catch (loadError) {
+              setError(
+                errorMessage(loadError, "Failed to load the latest saved report."),
+              );
+            }
           }}
           onBack={() => {
             setError(null);
@@ -182,18 +218,22 @@ function App() {
       )}
 
       {state.screen === "results" && state.report && (
-          <ResultsView
-            repoPath={state.repoPath}
-            session={state.session}
-            report={state.report}
-            latestReportPath={state.currentSession?.latestReportPath ?? null}
-            isRunning={isRunning}
-            error={error}
+        <ResultsView
+          repoPath={state.repoPath}
+          session={state.session}
+          report={state.report}
+          history={state.history}
+          isLatestReport={state.isLatestReport}
+          latestReportPath={state.currentSession?.latestReportPath ?? null}
+          isRunning={isRunning}
+          isSelectingReport={isSelectingReport}
+          error={error}
           onBack={() => {
             setError(null);
             goTo("session");
           }}
           onRerun={() => runCheck(false)}
+          onSelectReport={handleSelectReport}
         />
       )}
     </main>
