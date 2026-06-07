@@ -45,7 +45,7 @@ export function StartSessionView({
   return (
     <section className="view session-view">
       <header className="view-header">
-        <p className="eyebrow">Repository</p>
+        <p className="eyebrow">Feature session</p>
         <h1>Start feature session</h1>
         <p className="repo-path">{repoPath}</p>
       </header>
@@ -84,10 +84,9 @@ export function StartSessionView({
       )}
 
       <div className="card">
-        <h2>Feature request</h2>
+        <h2>What did you ask the AI to build?</h2>
         <p className="hint">
-          Describe what you asked your AI agent to build. This seeds keyword and
-          status-code checks against the diff.
+          Describe what you asked your AI agent to build.
         </p>
 
         <label className="field">

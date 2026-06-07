@@ -33,8 +33,7 @@ export function RepoSelectionView({
       <div className="card">
         <h2>Select repository</h2>
         <p className="hint">
-          Enter a local git repository path. Continuing initializes a local{" "}
-          <code>.agentready/</code> folder. Folder picker integration comes later.
+          Enter the path to a local git repository to start a readiness check.
         </p>
         <label className="field">
           <span>Repository path</span>
@@ -54,16 +53,14 @@ export function RepoSelectionView({
       </div>
 
       <div className="card info-card">
-        <h2>What Free v1 does</h2>
+        <h2>How it works</h2>
         <ul className="info-list">
-          <li>Runs baseline readiness checks on your uncommitted git diff</li>
-          <li>Matches changes against your original feature request</li>
+          <li>Checks your current uncommitted git diff before you commit</li>
+          <li>Compares changes against the original request you gave the AI</li>
           <li>Optionally runs a local test command you configure</li>
-          <li>Saves local session state and report history under <code>.agentready/</code></li>
         </ul>
         <p className="hint">
-          No signup, no auto-commit, no cloud. Deep stack-specific analysis is
-          not included yet.
+          Local-first. No signup, no auto-commit, no cloud dependency.
         </p>
       </div>
     </section>

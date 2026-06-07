@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { VerdictBadge } from "../components/VerdictBadge";
-import type { ReportHistoryEntry } from "../lib/storage";
 import type { FeatureSessionInput, ReadinessReport } from "../types";
 
 interface ResultsViewProps {
   repoPath: string;
   session: FeatureSessionInput;
   report: ReadinessReport;
-  history: ReportHistoryEntry[];
   latestReportPath: string | null;
   isRunning: boolean;
   error: string | null;
@@ -19,7 +17,6 @@ export function ResultsView({
   repoPath,
   session,
   report,
-  history,
   latestReportPath,
   isRunning,
   error,
@@ -88,6 +85,14 @@ export function ResultsView({
             <span className="summary-label">Failures</span>
             <strong>{report.summary.fail}</strong>
           </div>
+          <div className="summary-stat summary-stat-pass">
+            <span className="summary-label">Passes</span>
+            <strong>{report.summary.pass}</strong>
+          </div>
+          <div className="summary-stat summary-stat-skip">
+            <span className="summary-label">Skips</span>
+            <strong>{report.summary.skip}</strong>
+          </div>
         </div>
       </div>
 
@@ -99,21 +104,9 @@ export function ResultsView({
       )}
 
       <div className="results-overview-layout">
-        <div className="results-overview-sidebar">
-          <div className="card">
-            <h2>Original request</h2>
-            <p className="request-copy">{session.description}</p>
-          </div>
-
-          <div className="card">
-            <h2>Check summary</h2>
-            <ul className="stat-list">
-              <li>Pass: {report.summary.pass}</li>
-              <li>Warn: {report.summary.warn}</li>
-              <li>Fail: {report.summary.fail}</li>
-              <li>Skip: {report.summary.skip}</li>
-            </ul>
-          </div>
+        <div className="card">
+          <h2>Original request</h2>
+          <p className="request-copy">{session.description}</p>
         </div>
 
         <div className="card">
@@ -213,26 +206,6 @@ export function ResultsView({
         <pre className="repair-prompt">{report.repairPrompt}</pre>
       </div>
 
-      {history.length > 0 && (
-        <div className="card">
-          <h2>Report history</h2>
-          <p className="hint">
-            {history.length} saved {history.length === 1 ? "report" : "reports"}{" "}
-            in <code>.agentready/reports/</code>
-          </p>
-          <ul className="history-list">
-            {history.slice(0, 10).map((entry) => (
-              <li key={entry.fileName}>
-                <VerdictBadge verdict={entry.verdict} />
-                <span className="meta">
-                  {new Date(entry.generatedAt).toLocaleString()}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       <div className="actions">
         <button
           type="button"
@@ -255,8 +228,10 @@ function DiffList({ label, paths }: { label: string; paths: string[] }) {
     return null;
   }
 
+  const tone = label.toLowerCase();
+
   return (
-    <div className="diff-group">
+    <div className={`diff-group diff-group-${tone}`}>
       <h3>{label}</h3>
       <ul>
         {paths.map((path) => (

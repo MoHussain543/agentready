@@ -182,14 +182,13 @@ function App() {
       )}
 
       {state.screen === "results" && state.report && (
-        <ResultsView
-          repoPath={state.repoPath}
-          session={state.session}
-          report={state.report}
-          history={state.history}
-          latestReportPath={state.currentSession?.latestReportPath ?? null}
-          isRunning={isRunning}
-          error={error}
+          <ResultsView
+            repoPath={state.repoPath}
+            session={state.session}
+            report={state.report}
+            latestReportPath={state.currentSession?.latestReportPath ?? null}
+            isRunning={isRunning}
+            error={error}
           onBack={() => {
             setError(null);
             goTo("session");
