@@ -1,36 +1,29 @@
 import { useState } from "react";
 import { VerdictBadge } from "../components/VerdictBadge";
-import type { ReportHistoryEntry } from "../lib/storage";
 import type { FeatureSessionInput, ReadinessReport, TestResult } from "../types";
 
 interface ResultsViewProps {
   repoPath: string;
   session: FeatureSessionInput;
   report: ReadinessReport;
-  history: ReportHistoryEntry[];
   isLatestReport: boolean;
   latestReportPath: string | null;
   isRunning: boolean;
-  isSelectingReport: boolean;
   error: string | null;
   onBack: () => void;
   onRerun: () => void;
-  onSelectReport: (entry: ReportHistoryEntry) => void;
 }
 
 export function ResultsView({
   repoPath,
   session,
   report,
-  history,
   isLatestReport,
   latestReportPath,
   isRunning,
-  isSelectingReport,
   error,
   onBack,
   onRerun,
-  onSelectReport,
 }: ResultsViewProps) {
   const [copied, setCopied] = useState(false);
 
@@ -192,35 +185,6 @@ export function ResultsView({
         <pre className="repair-prompt">{report.repairPrompt}</pre>
       </div>
 
-      {history.length > 0 && (
-        <div className="card">
-          <h2>Report history</h2>
-          <ul className="history-list">
-            {history.slice(0, 10).map((entry) => {
-              const isCurrent = entry.generatedAt === report.generatedAt;
-              return (
-                <li key={entry.fileName}>
-                  <button
-                    type="button"
-                    className={`history-entry${isCurrent ? " history-entry-current" : ""}`}
-                    disabled={isCurrent || isSelectingReport || isRunning}
-                    onClick={() => onSelectReport(entry)}
-                  >
-                    <VerdictBadge verdict={entry.verdict} />
-                    <span className="meta">
-                      {new Date(entry.generatedAt).toLocaleString()}
-                    </span>
-                    {isCurrent && (
-                      <span className="history-entry-viewing">Viewing</span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
       <div className="actions">
         <button
           type="button"
@@ -228,9 +192,14 @@ export function ResultsView({
           disabled={isRunning}
           onClick={onBack}
         >
-          Edit session
+          Back
         </button>
-        <button type="button" disabled={isRunning} onClick={onRerun}>
+        <button
+          type="button"
+          className="primary-purple"
+          disabled={isRunning}
+          onClick={onRerun}
+        >
           {isRunning ? "Re-running..." : "Re-run check"}
         </button>
       </div>

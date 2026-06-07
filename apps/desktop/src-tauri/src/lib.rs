@@ -1,8 +1,10 @@
 mod engine;
 mod models;
+mod settings;
 mod storage;
 
 use models::{EngineRequest, FeatureSpec, ReadinessReport};
+use settings::AppSettings;
 use storage::{CurrentSession, ReportHistoryEntry, RepoSessionState};
 
 #[tauri::command]
@@ -59,6 +61,19 @@ fn list_reports(repo_path: String) -> Result<Vec<ReportHistoryEntry>, String> {
     storage::list_reports(&repo_path)
 }
 
+#[tauri::command]
+fn load_app_settings(app: tauri::AppHandle) -> Result<AppSettings, String> {
+    settings::load(&app)
+}
+
+#[tauri::command]
+fn save_app_settings(
+    app: tauri::AppHandle,
+    java_binary_override: Option<String>,
+) -> Result<AppSettings, String> {
+    settings::save(&app, java_binary_override)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -72,7 +87,9 @@ pub fn run() {
             save_report,
             load_latest_report,
             load_report_by_path,
-            list_reports
+            list_reports,
+            load_app_settings,
+            save_app_settings
         ])
         .run(tauri::generate_context!())
         .expect("error while running AgentReady desktop");

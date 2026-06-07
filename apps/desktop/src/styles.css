@@ -29,6 +29,215 @@ body {
   padding: 2.5rem 1rem 4rem;
 }
 
+.home-view {
+  max-width: 52rem;
+}
+
+.home-toolbar {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 5;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(12, 12, 18, 0.92);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  color: #dfe5f9;
+}
+
+.icon-button:hover:not(:disabled),
+.icon-button:active:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(167, 139, 250, 0.24);
+}
+
+.icon-button svg,
+.home-actions button svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.home-hero {
+  padding: 4.5rem 0 0;
+}
+
+.home-header {
+  text-align: center;
+}
+
+.home-header .subtitle {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  max-width: 28rem;
+  margin: 1.5rem auto 0;
+}
+
+.home-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.home-recents {
+  margin-top: 1.75rem;
+}
+
+.home-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.home-section-heading h2 {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 600;
+}
+
+.recent-projects-list,
+.report-project-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.recent-project,
+.report-project-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: 14px;
+  background: rgba(14, 14, 22, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  font-weight: normal;
+  letter-spacing: 0;
+  text-align: left;
+}
+
+.recent-project:hover:not(:disabled),
+.report-project-entry:hover:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(139, 92, 246, 0.22);
+  background: rgba(18, 18, 29, 0.82);
+}
+
+.recent-project:active:not(:disabled),
+.report-project-entry:active:not(:disabled) {
+  transform: none;
+  box-shadow: none;
+}
+
+.recent-project-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.16rem;
+}
+
+.recent-project-name {
+  color: #f5f7ff;
+  font-weight: 600;
+}
+
+.recent-project-path {
+  color: #8f9ab6;
+  font-size: 0.82rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.recent-project-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-shrink: 0;
+}
+
+.version-indicator {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.15rem;
+  margin: 0;
+  z-index: 5;
+  font-size: 0.8rem;
+  color: #7c86a3;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(2, 2, 6, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  width: min(36rem, 100%);
+  max-height: min(42rem, calc(100vh - 2rem));
+  overflow: auto;
+  padding: 1.35rem 1.45rem;
+  border-radius: 18px;
+  background: #0e0e16;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.modal-card h2 {
+  margin: 0.15rem 0 0;
+}
+
+.modal-section {
+  margin-top: 1.2rem;
+}
+
+.modal-section h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+  color: #eef2ff;
+}
+
+.modal-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: #d8e0fb;
+  display: grid;
+  gap: 0.45rem;
+}
+
 .view {
   max-width: 42rem;
   margin: 0 auto;
@@ -196,13 +405,13 @@ button {
   padding: 0.7rem 1.08rem;
   border: 1px solid transparent;
   border-radius: 12px;
-  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  background: linear-gradient(135deg, #d7a23a, #b9791f);
   color: #f8fbff;
   font: inherit;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 10px 26px rgba(76, 29, 149, 0.3);
+  box-shadow: 0 10px 26px rgba(117, 76, 19, 0.28);
   transition:
     transform 140ms ease,
     box-shadow 160ms ease,
@@ -213,12 +422,12 @@ button {
 
 button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 16px 32px rgba(76, 29, 149, 0.34);
+  box-shadow: 0 16px 32px rgba(117, 76, 19, 0.34);
 }
 
 button:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.24);
+  box-shadow: 0 8px 18px rgba(117, 76, 19, 0.24);
 }
 
 button:disabled {
@@ -238,6 +447,19 @@ button.secondary {
 button.secondary:hover:not(:disabled) {
   background: rgba(20, 20, 30, 0.96);
   border-color: rgba(167, 139, 250, 0.24);
+}
+
+button.primary-purple {
+  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  box-shadow: 0 10px 26px rgba(76, 29, 149, 0.3);
+}
+
+button.primary-purple:hover:not(:disabled) {
+  box-shadow: 0 16px 32px rgba(76, 29, 149, 0.34);
+}
+
+button.primary-purple:active:not(:disabled) {
+  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.24);
 }
 
 .actions {
@@ -385,9 +607,9 @@ button.secondary:hover:not(:disabled) {
 }
 
 .verdict-needs_review {
-  background: rgba(139, 92, 246, 0.18);
-  color: #a78bfa;
-  border-color: rgba(139, 92, 246, 0.34);
+  background: rgba(251, 191, 36, 0.16);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.32);
 }
 
 .verdict-not_ready {
@@ -737,8 +959,37 @@ code {
 
 .repo-view .view-header,
 .session-view .view-header,
-.results-view .view-header {
+.results-view .view-header,
+.reports-view .view-header {
   padding-top: 1.5rem;
+}
+
+@media (max-width: 719px) {
+  .home-hero {
+    padding-top: 3.9rem;
+  }
+
+  .recent-project,
+  .report-project-entry,
+  .history-entry {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .recent-project-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .home-toolbar {
+    top: 0.9rem;
+    right: 0.9rem;
+  }
+
+  .version-indicator {
+    right: 0.9rem;
+    bottom: 0.9rem;
+  }
 }
 
 @keyframes view-fade-in {

@@ -166,7 +166,12 @@ export function StartSessionView({
         >
           Back
         </button>
-        <button type="button" disabled={!canRun} onClick={onRunCheck}>
+        <button
+          type="button"
+          className="primary-purple"
+          disabled={!canRun}
+          onClick={onRunCheck}
+        >
           {isRunning
             ? "Running check..."
             : runTests

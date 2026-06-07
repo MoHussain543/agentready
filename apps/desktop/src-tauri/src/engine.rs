@@ -45,7 +45,7 @@ fn validate_request(request: &EngineRequest) -> Result<(), String> {
 
 fn invoke_engine(app: &tauri::AppHandle, request: &EngineRequest) -> Result<EngineResponse, String> {
     let jar_path = resolve_engine_jar(app)?;
-    let java_bin = resolve_java_binary();
+    let java_bin = resolve_java_binary(app);
 
     let mut child = Command::new(&java_bin)
         .arg("-jar")
@@ -124,7 +124,11 @@ pub fn resolve_engine_jar(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     )
 }
 
-fn resolve_java_binary() -> String {
+fn resolve_java_binary(app: &tauri::AppHandle) -> String {
+    if let Some(path) = crate::settings::java_binary_override(app) {
+        return path;
+    }
+
     if let Ok(path) = env::var("AGENTREADY_JAVA") {
         return path;
     }

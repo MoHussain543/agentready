@@ -90,7 +90,7 @@ export interface ReadinessReport {
   repairPrompt: string;
 }
 
-export type AppScreen = "repo" | "session" | "results";
+export type AppScreen = "home" | "session" | "results" | "reports";
 
 export interface AppState {
   screen: AppScreen;
