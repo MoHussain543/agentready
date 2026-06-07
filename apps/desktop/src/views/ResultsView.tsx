@@ -104,7 +104,7 @@ export function ResultsView({
 
       {error && (
         <div className="error-banner" role="alert">
-          <strong>Re-run failed</strong>
+          <strong>{error.includes("No uncommitted changes to check yet") ? "Nothing to check yet" : "Re-run failed"}</strong>
           <p>{error}</p>
         </div>
       )}

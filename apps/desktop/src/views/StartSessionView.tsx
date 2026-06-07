@@ -37,6 +37,8 @@ export function StartSessionView({
 }: StartSessionViewProps) {
   const latestVerdict = latestSession?.latestReportVerdict ?? null;
   const lastRunAt = latestSession?.lastReadinessRunAt ?? null;
+  const isFirstRun = !latestVerdict && !lastRunAt;
+  const isNoDiff = error?.includes("No uncommitted changes to check yet");
   const canRun =
     session.title.trim().length > 0 &&
     session.description.trim().length > 0 &&
@@ -54,9 +56,15 @@ export function StartSessionView({
 
       {error && (
         <div className="error-banner" role="alert">
-          <strong>Could not run readiness check</strong>
+          <strong>{isNoDiff ? "Nothing to check yet" : "Could not run readiness check"}</strong>
           <p>{error}</p>
         </div>
+      )}
+
+      {isFirstRun && !error && (
+        <p className="first-run-notice">
+          No checks have been run for this repository yet. Fill in what you asked the AI to build, then run a readiness check.
+        </p>
       )}
 
       {latestVerdict && (

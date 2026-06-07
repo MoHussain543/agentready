@@ -1,5 +1,19 @@
 import { open } from "@tauri-apps/plugin-dialog";
 
+function friendlyRepoError(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (lower.includes("not a git repository")) {
+    return "That folder isn't a git repository. Select the root folder of a project that uses git.";
+  }
+  if (lower.includes("does not exist")) {
+    return "That path doesn't exist. Check the folder path or use Browse to pick a different one.";
+  }
+  if (lower.includes("permission denied") || lower.includes("access denied")) {
+    return "AgentReady doesn't have permission to read that folder.";
+  }
+  return raw;
+}
+
 interface RepoSelectionViewProps {
   repoPath: string;
   isBusy: boolean;
@@ -39,7 +53,7 @@ export function RepoSelectionView({
       {error && (
         <div className="error-banner" role="alert">
           <strong>Could not open repository</strong>
-          <p>{error}</p>
+          <p>{friendlyRepoError(error)}</p>
         </div>
       )}
 
