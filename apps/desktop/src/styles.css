@@ -488,6 +488,10 @@ button.secondary:hover:not(:disabled) {
   color: #6b7a99;
 }
 
+.status-error {
+  color: #f87171;
+}
+
 .severity {
   display: inline-block;
   min-width: auto;
@@ -601,6 +605,21 @@ button.secondary:hover:not(:disabled) {
   font-size: 0.85rem;
   color: #fbbf24;
   font-weight: 600;
+}
+
+.inline-warning {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  color: #fbbf24;
+}
+
+.test-result-label {
+  margin: 0 0 0.45rem;
+}
+
+.test-result-label .status {
+  min-width: auto;
+  font-size: 0.8rem;
 }
 
 .git-context-line {

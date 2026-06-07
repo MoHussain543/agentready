@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { VerdictBadge } from "../components/VerdictBadge";
 import type { ReportHistoryEntry } from "../lib/storage";
-import type { FeatureSessionInput, ReadinessReport } from "../types";
+import type { FeatureSessionInput, ReadinessReport, TestResult } from "../types";
 
 interface ResultsViewProps {
   repoPath: string;
@@ -166,30 +166,10 @@ export function ResultsView({
         </ul>
       </div>
 
-      {report.testResult && (
+      {report.testResult && report.testResult.status !== "skip" && (
         <div className="card">
-          <h2>Test result</h2>
-          <p>
-            <span className={`status status-${report.testResult.status}`}>
-              {report.testResult.status}
-            </span>
-            {report.testResult.ran ? " Tests ran" : " Tests not run"}
-          </p>
-          {report.testResult.command && (
-            <p className="meta">
-              Command: <code>{report.testResult.command}</code>
-              {typeof report.testResult.exitCode === "number"
-                ? ` · exit ${report.testResult.exitCode}`
-                : ""}
-              {typeof report.testResult.durationMs === "number"
-                ? ` · ${report.testResult.durationMs}ms`
-                : ""}
-            </p>
-          )}
-          {report.testResult.message && <p>{report.testResult.message}</p>}
-          {report.testResult.stdoutSnippet && (
-            <pre className="test-output">{report.testResult.stdoutSnippet}</pre>
-          )}
+          <h2>Tests</h2>
+          <TestResultDetail testResult={report.testResult} />
         </div>
       )}
 
@@ -255,6 +235,86 @@ export function ResultsView({
         </button>
       </div>
     </section>
+  );
+}
+
+function TestResultDetail({ testResult }: { testResult: TestResult }) {
+  const { status, ran, command, exitCode, durationMs, message, stdoutSnippet, stderrSnippet } =
+    testResult;
+
+  if (status === "warn" && !ran) {
+    return (
+      <>
+        <p className="test-result-label">
+          <span className="status status-warn">No test command configured</span>
+        </p>
+        <p className="hint">
+          Add a test command on the session screen to run tests with future checks.
+        </p>
+      </>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <>
+        <p className="test-result-label">
+          <span className="status status-error">Test command failed to start</span>
+        </p>
+        {command && (
+          <p className="meta">
+            Command: <code>{command}</code>
+          </p>
+        )}
+        {message && <p>{message}</p>}
+        {stderrSnippet && <pre className="test-output">{stderrSnippet}</pre>}
+      </>
+    );
+  }
+
+  if (status === "fail") {
+    return (
+      <>
+        <p className="test-result-label">
+          <span className="status status-fail">Tests failed</span>
+        </p>
+        {command && (
+          <p className="meta">
+            <code>{command}</code>
+            {typeof exitCode === "number" ? ` · exit ${exitCode}` : ""}
+            {typeof durationMs === "number" ? ` · ${durationMs}ms` : ""}
+          </p>
+        )}
+        {message && <p>{message}</p>}
+        {stdoutSnippet && <pre className="test-output">{stdoutSnippet}</pre>}
+        {stderrSnippet && <pre className="test-output">{stderrSnippet}</pre>}
+      </>
+    );
+  }
+
+  if (status === "pass") {
+    return (
+      <>
+        <p className="test-result-label">
+          <span className="status status-pass">Tests passed</span>
+        </p>
+        {command && (
+          <p className="meta">
+            <code>{command}</code>
+            {typeof durationMs === "number" ? ` · ${durationMs}ms` : ""}
+          </p>
+        )}
+        {message && <p className="meta">{message}</p>}
+      </>
+    );
+  }
+
+  // Fallback for any unhandled status variant
+  return (
+    <p className="test-result-label">
+      <span className={`status status-${status}`}>{status}</span>
+      {message && <> — {message}</>}
+    </p>
   );
 }
 

@@ -42,6 +42,8 @@ export function StartSessionView({
     session.description.trim().length > 0 &&
     !isRunning;
 
+  const testCommandMissing = runTests && testCommand.trim().length === 0;
+
   return (
     <section className="view session-view">
       <header className="view-header">
@@ -114,18 +116,10 @@ export function StartSessionView({
             }
           />
         </label>
+      </div>
 
-        <label className="field">
-          <span>Test command (optional)</span>
-          <input
-            type="text"
-            value={testCommand}
-            placeholder="mvn test"
-            disabled={isRunning}
-            onChange={(e) => onTestCommandChange(e.target.value)}
-          />
-        </label>
-
+      <div className="card">
+        <h2>Tests</h2>
         <label className="checkbox-field">
           <input
             type="checkbox"
@@ -135,6 +129,24 @@ export function StartSessionView({
           />
           <span>Run tests with this check</span>
         </label>
+
+        <label className="field">
+          <span>Test command</span>
+          <input
+            type="text"
+            value={testCommand}
+            placeholder="npm test"
+            disabled={isRunning}
+            onChange={(e) => onTestCommandChange(e.target.value)}
+          />
+        </label>
+        <p className="hint">Saved per repository. Leave blank to skip test execution.</p>
+
+        {testCommandMissing && (
+          <p className="inline-warning" role="alert">
+            No test command saved. Enter one above or uncheck "Run tests" to skip.
+          </p>
+        )}
       </div>
 
       <div className="actions">
