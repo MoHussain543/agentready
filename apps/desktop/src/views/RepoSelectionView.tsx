@@ -16,8 +16,9 @@ export function RepoSelectionView({
   const canContinue = repoPath.trim().length > 0 && !isBusy;
 
   return (
-    <section className="view">
+    <section className="view repo-view">
       <header className="view-header">
+        <p className="eyebrow">Local verifier</p>
         <h1>AgentReady</h1>
         <p className="subtitle">Verify AI-generated code before you commit.</p>
       </header>

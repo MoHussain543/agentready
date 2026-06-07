@@ -43,7 +43,7 @@ export function StartSessionView({
     !isRunning;
 
   return (
-    <section className="view">
+    <section className="view session-view">
       <header className="view-header">
         <p className="eyebrow">Repository</p>
         <h1>Start feature session</h1>
