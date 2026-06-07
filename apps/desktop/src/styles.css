@@ -141,6 +141,24 @@ code,
   color: #e2e8ff;
 }
 
+.input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.input-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.browse-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
 input,
 textarea {
   width: 100%;

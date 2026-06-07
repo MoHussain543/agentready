@@ -1,3 +1,5 @@
+import { open } from "@tauri-apps/plugin-dialog";
+
 interface RepoSelectionViewProps {
   repoPath: string;
   isBusy: boolean;
@@ -14,6 +16,17 @@ export function RepoSelectionView({
   onContinue,
 }: RepoSelectionViewProps) {
   const canContinue = repoPath.trim().length > 0 && !isBusy;
+
+  async function handleBrowse() {
+    try {
+      const selected = await open({ directory: true, multiple: false });
+      if (typeof selected === "string") {
+        onRepoPathChange(selected);
+      }
+    } catch {
+      // Leave the current path alone if the native picker is unavailable.
+    }
+  }
 
   return (
     <section className="view repo-view">
@@ -37,13 +50,23 @@ export function RepoSelectionView({
         </p>
         <label className="field">
           <span>Repository path</span>
-          <input
-            type="text"
-            value={repoPath}
-            placeholder="/Users/you/projects/my-app"
-            disabled={isBusy}
-            onChange={(e) => onRepoPathChange(e.target.value)}
-          />
+          <div className="input-row">
+            <input
+              type="text"
+              value={repoPath}
+              placeholder="/Users/you/projects/my-app"
+              disabled={isBusy}
+              onChange={(e) => onRepoPathChange(e.target.value)}
+            />
+            <button
+              type="button"
+              className="secondary browse-button"
+              disabled={isBusy}
+              onClick={handleBrowse}
+            >
+              Browse
+            </button>
+          </div>
         </label>
         <div className="actions">
           <button type="button" disabled={!canContinue} onClick={onContinue}>
