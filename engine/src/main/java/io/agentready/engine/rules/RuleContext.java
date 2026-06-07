@@ -25,6 +25,7 @@ public final class RuleContext {
     private final FeatureSpec featureSpec;
 
     private String cachedCorpus;
+    private DiffProfile cachedDiffProfile;
 
     public RuleContext(
             String repoPath,
@@ -79,6 +80,17 @@ public final class RuleContext {
 
     public FeatureSpec featureSpec() {
         return featureSpec;
+    }
+
+    /**
+     * Derived diff properties used by rules to calibrate their thresholds.
+     * Built lazily and cached.
+     */
+    public DiffProfile diffProfile() {
+        if (cachedDiffProfile == null) {
+            cachedDiffProfile = new DiffProfile(changedFiles, classifier, totalChangedLines);
+        }
+        return cachedDiffProfile;
     }
 
     /**

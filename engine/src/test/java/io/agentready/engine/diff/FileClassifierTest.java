@@ -57,6 +57,18 @@ class FileClassifierTest {
     }
 
     @Test
+    void detectsStyleFiles() {
+        assertTrue(classifier.isStyleFile("src/styles/main.css"));
+        assertTrue(classifier.isStyleFile("components/Button.scss"));
+        assertTrue(classifier.isStyleFile("src/theme.less"));
+        assertTrue(classifier.isStyleFile("src/app.sass"));
+
+        assertFalse(classifier.isStyleFile("src/components/Button.tsx"));
+        assertFalse(classifier.isStyleFile("README.md"));
+        assertFalse(classifier.isStyleFile("src/App.java"));
+    }
+
+    @Test
     void detectsIgnoredInternalAndGeneratedArtifacts() {
         assertTrue(classifier.isAgentReadyInternal(".agentready/session.json"));
         assertTrue(classifier.isGeneratedArtifact("apps/desktop/src-tauri/gen/schemas/desktop-schema.json"));
@@ -73,6 +85,8 @@ class FileClassifierTest {
         assertEquals(FileCategory.ENV, classifier.classify(".env.production"));
         assertEquals(FileCategory.CONFIG, classifier.classify("tsconfig.json"));
         assertEquals(FileCategory.DOCS, classifier.classify("docs/architecture.md"));
+        assertEquals(FileCategory.STYLE, classifier.classify("src/styles/main.css"));
+        assertEquals(FileCategory.STYLE, classifier.classify("components/Button.scss"));
         assertEquals(FileCategory.SOURCE, classifier.classify("src/main/User.java"));
         assertEquals(FileCategory.RISKY, classifier.classify("src/auth/session_store.go"));
         assertEquals(FileCategory.OTHER, classifier.classify("assets/logo.png"));

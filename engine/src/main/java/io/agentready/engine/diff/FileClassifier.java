@@ -22,6 +22,9 @@ public final class FileClassifier {
 
     private static final Set<String> DOC_EXTENSIONS = Set.of("md", "mdx", "rst", "adoc");
 
+    private static final Set<String> STYLE_EXTENSIONS = Set.of(
+            "css", "scss", "sass", "less", "pcss", "styl");
+
     private static final Set<String> DEPENDENCY_FILES = Set.of(
             "package.json", "package-lock.json", "npm-shrinkwrap.json", "yarn.lock",
             "pnpm-lock.yaml", "pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle",
@@ -56,6 +59,9 @@ public final class FileClassifier {
         }
         if (isDocsFile(path)) {
             return FileCategory.DOCS;
+        }
+        if (isStyleFile(path)) {
+            return FileCategory.STYLE;
         }
         if (isRiskyPath(path)) {
             return FileCategory.RISKY;
@@ -111,6 +117,10 @@ public final class FileClassifier {
                 || name.startsWith(".stylelintrc")
                 || name.startsWith("tsconfig")
                 || name.equals(".editorconfig");
+    }
+
+    public boolean isStyleFile(String path) {
+        return STYLE_EXTENSIONS.contains(extension(path));
     }
 
     public boolean isDocsFile(String path) {

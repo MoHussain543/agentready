@@ -150,9 +150,15 @@ class ReadinessRunnerTest {
     }
 
     @Test
-    void productionWithoutTestsWarns() {
+    void productionWithoutTestsWarnsForLargerDiff() {
+        // 4 production files exceeds TINY_MAX_PRODUCTION_FILES (3), so warning is preserved.
         FakeGitService git = new FakeGitService();
-        git.files = List.of(new ChangedFile("src/main/App.java", ChangeType.MODIFIED));
+        git.files = List.of(
+                new ChangedFile("src/main/UserService.java", ChangeType.MODIFIED),
+                new ChangedFile("src/main/OrderService.java", ChangeType.MODIFIED),
+                new ChangedFile("src/main/PaymentService.java", ChangeType.MODIFIED),
+                new ChangedFile("src/main/NotificationService.java", ChangeType.MODIFIED));
+        git.changedLines = 15; // 4 files × 15 lines = 60 total, above TINY_MAX_CHANGED_LINES too
 
         ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
 
@@ -160,7 +166,63 @@ class ReadinessRunnerTest {
         assertEquals(Verdict.NEEDS_REVIEW, report.verdict());
         assertTrue(report.findings().stream()
                 .anyMatch(f -> f.checkId().equals("production-without-tests")
-                        && f.paths().contains("src/main/App.java")));
+                        && f.paths().contains("src/main/UserService.java")));
+    }
+
+    @Test
+    void productionWithoutTestsWarnsWhenLineThresholdExceeded() {
+        // Single file but 30 changed lines exceeds TINY_MAX_CHANGED_LINES (25).
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/main/App.java", ChangeType.MODIFIED));
+        git.changedLines = 30;
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(CheckStatus.warn, check(report, "production-without-tests").status());
+        assertEquals(Verdict.NEEDS_REVIEW, report.verdict());
+    }
+
+    @Test
+    void tinyUiCopyDiffSkipsProductionWithoutTests() {
+        // 1 non-risky source file, 8 changed lines — a typical UI label or copy edit.
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/components/NavBar.tsx", ChangeType.MODIFIED));
+        git.changedLines = 8;
+        git.addedLines = Map.of(
+                "src/components/NavBar.tsx", List.of("  <span>Dashboard</span>"));
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(CheckStatus.skip, check(report, "production-without-tests").status());
+        assertEquals(Verdict.READY_TO_COMMIT, report.verdict());
+    }
+
+    @Test
+    void docsOnlyDiffIsReadyToCommit() {
+        // Pure docs change — no production source, no config — should be fully clean.
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(
+                new ChangedFile("README.md", ChangeType.MODIFIED),
+                new ChangedFile("docs/architecture.md", ChangeType.MODIFIED));
+        git.changedLines = 15;
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(CheckStatus.skip, check(report, "production-without-tests").status());
+        assertEquals(Verdict.READY_TO_COMMIT, report.verdict());
+    }
+
+    @Test
+    void tinyRiskyPathDiffStillWarns() {
+        // Single file, under 25 lines, but touches a risky path — warning must be preserved.
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/auth/Login.tsx", ChangeType.MODIFIED));
+        git.changedLines = 10;
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(CheckStatus.warn, check(report, "production-without-tests").status());
+        assertEquals(Verdict.NEEDS_REVIEW, report.verdict());
     }
 
     @Test
@@ -559,8 +621,10 @@ class ReadinessRunnerTest {
 
     @Test
     void verdictExplanationForNeedsReview() {
+        // Use a diff that exceeds the tiny threshold so the warning fires.
         FakeGitService git = new FakeGitService();
         git.files = List.of(new ChangedFile("src/main/App.java", ChangeType.MODIFIED));
+        git.changedLines = 30;
 
         ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
 
@@ -586,6 +650,7 @@ class ReadinessRunnerTest {
     void repairPromptIncludesFeatureDescriptionAndFindings() {
         FakeGitService git = new FakeGitService();
         git.files = List.of(new ChangedFile("src/main/App.java", ChangeType.MODIFIED));
+        git.changedLines = 30; // exceeds tiny threshold so a finding is produced
         FeatureSpec spec = spec(List.of(), List.of(), List.of());
 
         ReadinessReport report = new ReadinessRunner(git)

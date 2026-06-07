@@ -9,6 +9,7 @@ public enum FileCategory {
     ENV,
     DEPENDENCY,
     DOCS,
+    STYLE,
     CI,
     MIGRATION,
     RISKY,
