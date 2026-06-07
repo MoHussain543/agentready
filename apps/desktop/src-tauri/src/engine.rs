@@ -3,14 +3,17 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
+use tauri::Manager;
+
 use crate::models::{EngineError, EngineRequest, EngineResponse, ReadinessReport};
 
+#[cfg(test)]
 const DEFAULT_CHECK_SUITE: &str = "free-v1-precommit";
 
-pub fn run_readiness(request: EngineRequest) -> Result<ReadinessReport, String> {
+pub fn run_readiness(app: &tauri::AppHandle, request: EngineRequest) -> Result<ReadinessReport, String> {
     validate_request(&request)?;
 
-    let response = invoke_engine(&request)?;
+    let response = invoke_engine(app, &request)?;
     if response.status == "ok" {
         response.report.ok_or_else(|| {
             "Engine returned ok but no report was present in the response".to_string()
@@ -40,9 +43,9 @@ fn validate_request(request: &EngineRequest) -> Result<(), String> {
     Ok(())
 }
 
-fn invoke_engine(request: &EngineRequest) -> Result<EngineResponse, String> {
-    let jar_path = resolve_engine_jar()?;
-    let java_bin = resolve_java_binary()?;
+fn invoke_engine(app: &tauri::AppHandle, request: &EngineRequest) -> Result<EngineResponse, String> {
+    let jar_path = resolve_engine_jar(app)?;
+    let java_bin = resolve_java_binary();
 
     let mut child = Command::new(&java_bin)
         .arg("-jar")
@@ -86,41 +89,86 @@ fn invoke_engine(request: &EngineRequest) -> Result<EngineResponse, String> {
     })
 }
 
-pub fn resolve_engine_jar() -> Result<PathBuf, String> {
+pub fn resolve_engine_jar(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    // 1. Explicit override — useful for CI and custom installs.
     if let Ok(path) = env::var("AGENTREADY_ENGINE_JAR") {
-        let jar = PathBuf::from(&path);
-        return ensure_jar_exists(&jar, "AGENTREADY_ENGINE_JAR");
+        return ensure_jar_exists(&PathBuf::from(&path), "AGENTREADY_ENGINE_JAR");
     }
 
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let candidates = [
-        manifest_dir.join("../../../engine/target/agentready-engine.jar"),
-        manifest_dir.join("../../resources/agentready-engine.jar"),
-        manifest_dir.join("resources/agentready-engine.jar"),
-    ];
-
-    for candidate in &candidates {
-        if candidate.exists() {
-            return Ok(candidate.to_path_buf());
+    // 2. Tauri resource dir — the canonical location in a packaged build.
+    //    The JAR is declared as a bundle resource in tauri.conf.json and staged
+    //    into src-tauri/resources/ as part of the release build step.
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        let bundled = resource_dir.join("agentready-engine.jar");
+        if bundled.exists() {
+            return Ok(bundled);
         }
     }
 
-    Err(format!(
-        "Could not locate agentready-engine.jar. Build it with `cd engine && mvn package`, \
-         or set AGENTREADY_ENGINE_JAR. Checked: {}",
-        candidates
-            .iter()
-            .map(|path| path.display().to_string())
-            .collect::<Vec<_>>()
-            .join(", ")
-    ))
+    // 3. Source-tree dev fallback — works when `tauri dev` is run from the
+    //    monorepo checkout. CARGO_MANIFEST_DIR is baked in at compile time and
+    //    will not resolve on other machines, so this is dev-only.
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let dev_jar = manifest_dir.join("../../../engine/target/agentready-engine.jar");
+    if dev_jar.exists() {
+        return Ok(dev_jar);
+    }
+
+    Err(
+        "Could not locate agentready-engine.jar. \
+         For a release build, run `cd engine && mvn package` then stage the JAR into \
+         apps/desktop/src-tauri/resources/ before running `tauri build`. \
+         For local dev, run `cd engine && mvn package`. \
+         Set AGENTREADY_ENGINE_JAR to override the path."
+            .to_string(),
+    )
 }
 
-fn resolve_java_binary() -> Result<String, String> {
+fn resolve_java_binary() -> String {
     if let Ok(path) = env::var("AGENTREADY_JAVA") {
-        return Ok(path);
+        return path;
     }
-    Ok("java".to_string())
+
+    // $JAVA_HOME is set by most JDK installers and is reliable across package managers.
+    if let Ok(java_home) = env::var("JAVA_HOME") {
+        let java = PathBuf::from(java_home).join("bin").join("java");
+        if java.exists() {
+            return java.to_string_lossy().into_owned();
+        }
+    }
+
+    // When the app is launched from Finder, PATH is the minimal launchd PATH and
+    // does not include Homebrew or JDK installer locations. Check known paths
+    // so the engine can start without requiring AGENTREADY_JAVA to be set.
+    #[cfg(target_os = "macos")]
+    {
+        let well_known = [
+            "/opt/homebrew/opt/openjdk/bin/java", // Apple Silicon Homebrew
+            "/usr/local/opt/openjdk/bin/java",     // Intel Homebrew
+            "/usr/bin/java",                        // macOS system Java shim (triggers install prompt)
+        ];
+        for path in &well_known {
+            if Path::new(path).exists() {
+                return (*path).to_string();
+            }
+        }
+
+        // Search JDK installations in the standard macOS location.
+        if let Ok(entries) = std::fs::read_dir("/Library/Java/JavaVirtualMachines") {
+            let mut found: Vec<PathBuf> = entries
+                .filter_map(|e| e.ok())
+                .map(|e| e.path().join("Contents/Home/bin/java"))
+                .filter(|p| p.exists())
+                .collect();
+            found.sort();
+            if let Some(java) = found.last() {
+                return java.to_string_lossy().into_owned();
+            }
+        }
+    }
+
+    // Final fallback: rely on PATH. Works when launched from a terminal.
+    "java".to_string()
 }
 
 fn ensure_jar_exists(path: &Path, label: &str) -> Result<PathBuf, String> {

@@ -86,8 +86,11 @@ function friendlyEngineError(raw: string): string {
   if (raw.includes("INVALID_REPO")) {
     return "This path is not a git repository. Open a folder that contains a .git directory.";
   }
-  if (raw.includes("Failed to start Java engine") || raw.includes("agentready-engine.jar")) {
-    return `Could not start the verification engine. Build it with \`cd engine && mvn package\`, or set AGENTREADY_ENGINE_JAR. (${raw})`;
+  if (raw.includes("Failed to start Java engine")) {
+    return "Could not start the verification engine — Java 21 or later is required. Install it from adoptium.net, or set AGENTREADY_JAVA to the path of your java binary.";
+  }
+  if (raw.includes("agentready-engine.jar") || raw.includes("Could not locate")) {
+    return `Verification engine not found. ${raw}`;
   }
   return raw;
 }

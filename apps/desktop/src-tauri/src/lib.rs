@@ -6,8 +6,8 @@ use models::{EngineRequest, FeatureSpec, ReadinessReport};
 use storage::{CurrentSession, ReportHistoryEntry, RepoSessionState};
 
 #[tauri::command]
-fn run_readiness(request: EngineRequest) -> Result<ReadinessReport, String> {
-    engine::run_readiness(request)
+fn run_readiness(app: tauri::AppHandle, request: EngineRequest) -> Result<ReadinessReport, String> {
+    engine::run_readiness(&app, request)
 }
 
 #[tauri::command]

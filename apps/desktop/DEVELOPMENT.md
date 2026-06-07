@@ -10,11 +10,11 @@ java -jar <agentready-engine.jar>   # JSON request on stdin, JSON response on st
 
 ### Locating the engine JAR
 
-Resolution order:
+Runtime resolution order (`engine.rs`):
 
-1. `AGENTREADY_ENGINE_JAR` — absolute path to the fat JAR (recommended for CI or custom layouts)
-2. `engine/target/agentready-engine.jar` relative to the monorepo root (default for local dev)
-3. `apps/desktop/resources/agentready-engine.jar` (future bundled artifact)
+1. `AGENTREADY_ENGINE_JAR` — absolute path to the fat JAR; use this for CI or custom layouts.
+2. Tauri resource directory — where the JAR is bundled in a packaged app (populated by `bundle.resources` in `tauri.conf.json`).
+3. `engine/target/agentready-engine.jar` relative to `CARGO_MANIFEST_DIR` — **dev-only**; this path is baked in at compile time and will not resolve on other machines.
 
 Build the engine before running the desktop app:
 
@@ -22,20 +22,49 @@ Build the engine before running the desktop app:
 cd engine && mvn package
 ```
 
+`build.rs` auto-stages the built JAR into `src-tauri/resources/agentready-engine.jar` so that the Tauri resource declaration is satisfied. The staged JAR is gitignored and refreshed automatically on each build if the source JAR is newer.
+
 ### Java binary
 
-- Default: `java` on `PATH` (JDK 21+)
-- Override: `AGENTREADY_JAVA=/path/to/java`
+Resolution order:
+
+1. `AGENTREADY_JAVA` — absolute path to the `java` binary.
+2. `$JAVA_HOME/bin/java` — set by most JDK installers.
+3. Well-known macOS locations (Homebrew, JDK installer) — needed when the app is launched from Finder, where PATH excludes most package manager paths.
+4. `java` on `$PATH` — fallback; works when launched from a terminal.
+
+Minimum required version: JDK 21+.
 
 ### Running the desktop app
 
 ```bash
-cd apps/desktop
+cd engine && mvn package          # build engine first
+cd ../apps/desktop
 npm install
 npm run tauri dev
 ```
 
-`tauri dev` must be started from the monorepo checkout so the relative path to `engine/target/agentready-engine.jar` resolves.
+`tauri dev` must be run from inside `apps/desktop/`. The `build.rs` script locates the engine JAR relative to `CARGO_MANIFEST_DIR`, which requires the monorepo layout to be intact.
+
+### Building a release bundle
+
+```bash
+# 1. Build the engine fat JAR.
+cd engine && mvn package
+
+# 2. Build and bundle the desktop app.
+#    beforeBuildCommand copies the JAR into src-tauri/resources/ automatically.
+cd apps/desktop
+npm run tauri build
+```
+
+The resulting `.app` (macOS) or installer is in `apps/desktop/src-tauri/target/release/bundle/`.
+
+**Requirements on the target machine:**
+- Java 21+ must be installed. JDK from adoptium.net is recommended.
+- No other dependencies; the JAR is bundled inside the app.
+
+See `docs/release-v1.1-checklist.md` for the full pre-release verification checklist.
 
 ### Request flow
 
