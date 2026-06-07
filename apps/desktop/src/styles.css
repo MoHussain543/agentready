@@ -22,17 +22,6 @@ body {
   margin: 0;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
-  background-size: 2.4rem 2.4rem;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35), transparent 92%);
-  pointer-events: none;
-}
 
 .app {
   position: relative;
@@ -118,19 +107,10 @@ code,
 .card {
   margin-top: 1.25rem;
   padding: 1.35rem 1.45rem;
-  background: linear-gradient(180deg, rgba(16, 16, 24, 0.96), rgba(11, 11, 18, 0.96));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(10px);
-  transition:
-    border-color 160ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease,
-    background 180ms ease;
-  animation: card-rise-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  background: #0e0e16;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  transition: border-color 160ms ease;
 }
 
 .card h2 {
@@ -254,8 +234,8 @@ button.secondary:hover:not(:disabled) {
   gap: 1rem;
 }
 
-.inspection-summary-card {
-  border-color: rgba(167, 139, 250, 0.2);
+.inspection-summary-strip {
+  margin-top: 1.25rem;
 }
 
 .results-overview-layout {
@@ -282,6 +262,26 @@ button.secondary:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.summary-stat-verdict {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.16);
+}
+
+.summary-stat-files {
+  background: rgba(129, 140, 248, 0.07);
+  border-color: rgba(129, 140, 248, 0.14);
+}
+
+.summary-stat-warn {
+  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(251, 191, 36, 0.16);
+}
+
+.summary-stat-fail {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.16);
+}
+
 .summary-label {
   display: block;
   margin-bottom: 0.35rem;
@@ -298,6 +298,22 @@ button.secondary:hover:not(:disabled) {
   font-size: 0.98rem;
   font-weight: 600;
   line-height: 1.3;
+}
+
+.summary-stat-verdict strong {
+  color: #c4b5fd;
+}
+
+.summary-stat-files strong {
+  color: #c7d2fe;
+}
+
+.summary-stat-warn strong {
+  color: #fcd34d;
+}
+
+.summary-stat-fail strong {
+  color: #fca5a5;
 }
 
 @media (min-width: 720px) {
@@ -342,21 +358,21 @@ button.secondary:hover:not(:disabled) {
 }
 
 .verdict-ready_to_commit {
-  background: rgba(34, 197, 94, 0.12);
-  color: #a7f3c2;
-  border-color: rgba(34, 197, 94, 0.18);
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.3);
 }
 
 .verdict-needs_review {
-  background: rgba(139, 92, 246, 0.14);
-  color: #dbc7ff;
-  border-color: rgba(139, 92, 246, 0.24);
+  background: rgba(139, 92, 246, 0.18);
+  color: #a78bfa;
+  border-color: rgba(139, 92, 246, 0.34);
 }
 
 .verdict-not_ready {
-  background: rgba(248, 113, 113, 0.12);
-  color: #fecaca;
-  border-color: rgba(248, 113, 113, 0.18);
+  background: rgba(248, 113, 113, 0.16);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
 }
 
 .stat-list,
@@ -416,21 +432,21 @@ button.secondary:hover:not(:disabled) {
 }
 
 .status-pass {
-  color: #7ef0aa;
+  color: #4ade80;
 }
 
 .status-warn,
 .severity-warn {
-  color: #ffd369;
+  color: #fbbf24;
 }
 
 .status-fail,
 .severity-fail {
-  color: #ff8e8e;
+  color: #f87171;
 }
 
 .status-skip {
-  color: #7e8aaa;
+  color: #6b7a99;
 }
 
 .severity {
@@ -541,10 +557,14 @@ button.secondary:hover:not(:disabled) {
   color: #9ca7c4;
 }
 
+.git-context-line {
+  margin: 0.35rem 0 0;
+  font-size: 0.83rem;
+  color: #808aa7;
+}
+
 .info-card {
-  background:
-    linear-gradient(180deg, rgba(18, 16, 28, 0.96), rgba(12, 11, 20, 0.96)),
-    radial-gradient(circle at top right, rgba(124, 58, 237, 0.14), transparent 10rem);
+  border-color: rgba(139, 92, 246, 0.18);
 }
 
 .info-list {
@@ -622,24 +642,11 @@ code {
   }
 }
 
-@keyframes card-rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .view,
-  .card {
+  .view {
     animation: none;
   }
 
-  .card,
   button,
   input,
   textarea {

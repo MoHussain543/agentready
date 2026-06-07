@@ -61,36 +61,33 @@ export function ResultsView({
             Saved locally to <code>{latestReportPath}</code>
           </p>
         )}
+        {report.git && (
+          <p className="git-context-line">
+            Git context: <code>{report.git.branch}</code> @{" "}
+            <code>{report.git.baseCommit}</code>
+            {report.git.isDirty ? " · working tree has uncommitted changes" : ""}
+          </p>
+        )}
       </header>
 
-      <div className="card inspection-summary-card">
-        <p className="section-kicker">Inspection summary</p>
+      <div className="inspection-summary-strip">
         <div className="summary-grid">
-          <div className="summary-stat">
+          <div className="summary-stat summary-stat-verdict">
             <span className="summary-label">Verdict</span>
             <strong>{report.verdict.replaceAll("_", " ")}</strong>
           </div>
-          <div className="summary-stat">
+          <div className="summary-stat summary-stat-files">
             <span className="summary-label">Files changed</span>
             <strong>{report.diffSummary.totalFiles}</strong>
           </div>
-          <div className="summary-stat">
+          <div className="summary-stat summary-stat-warn">
             <span className="summary-label">Warnings</span>
             <strong>{report.summary.warn}</strong>
           </div>
-          <div className="summary-stat">
+          <div className="summary-stat summary-stat-fail">
             <span className="summary-label">Failures</span>
             <strong>{report.summary.fail}</strong>
           </div>
-          {report.git && (
-            <div className="summary-stat summary-stat-wide">
-              <span className="summary-label">Git context</span>
-              <strong>
-                {report.git.branch} @ {report.git.baseCommit}
-                {report.git.isDirty ? " (dirty)" : ""}
-              </strong>
-            </div>
-          )}
         </div>
       </div>
 
@@ -104,13 +101,11 @@ export function ResultsView({
       <div className="results-overview-layout">
         <div className="results-overview-sidebar">
           <div className="card">
-            <p className="section-kicker">Feature contract</p>
             <h2>Original request</h2>
             <p className="request-copy">{session.description}</p>
           </div>
 
           <div className="card">
-            <p className="section-kicker">Check totals</p>
             <h2>Check summary</h2>
             <ul className="stat-list">
               <li>Pass: {report.summary.pass}</li>
@@ -118,17 +113,10 @@ export function ResultsView({
               <li>Fail: {report.summary.fail}</li>
               <li>Skip: {report.summary.skip}</li>
             </ul>
-            {report.git && (
-              <p className="meta">
-                {report.git.branch} @ {report.git.baseCommit}
-                {report.git.isDirty ? " (dirty)" : ""}
-              </p>
-            )}
           </div>
         </div>
 
         <div className="card">
-          <p className="section-kicker">Working tree evidence</p>
           <h2>Diff summary</h2>
           <DiffList label="Added" paths={report.diffSummary.added} />
           <DiffList label="Modified" paths={report.diffSummary.modified} />
@@ -142,7 +130,6 @@ export function ResultsView({
 
       {report.findings && report.findings.length > 0 && (
         <div className="card">
-          <p className="section-kicker">Issues requiring review</p>
           <h2>Findings</h2>
           <ul className="findings-list">
             {report.findings.map((finding) => (
@@ -161,7 +148,6 @@ export function ResultsView({
       )}
 
       <div className="card">
-        <p className="section-kicker">Rule-by-rule output</p>
         <h2>Checks</h2>
         <ul className="checks-list">
           {report.checks.map((check) => (
@@ -183,7 +169,6 @@ export function ResultsView({
 
       {report.testResult && (
         <div className="card">
-          <p className="section-kicker">Execution proof</p>
           <h2>Test result</h2>
           <p>
             <span className={`status status-${report.testResult.status}`}>
@@ -212,7 +197,6 @@ export function ResultsView({
       <div className="card">
         <div className="card-header">
           <div>
-            <p className="section-kicker">Next action</p>
             <h2>Repair prompt</h2>
           </div>
           <button
@@ -231,7 +215,6 @@ export function ResultsView({
 
       {history.length > 0 && (
         <div className="card">
-          <p className="section-kicker">Local audit trail</p>
           <h2>Report history</h2>
           <p className="hint">
             {history.length} saved {history.length === 1 ? "report" : "reports"}{" "}

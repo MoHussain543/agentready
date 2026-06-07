@@ -84,7 +84,7 @@ export function StartSessionView({
       )}
 
       <div className="card">
-        <h2>Original request</h2>
+        <h2>Feature request</h2>
         <p className="hint">
           Describe what you asked your AI agent to build. This seeds keyword and
           status-code checks against the diff.
@@ -116,17 +116,8 @@ export function StartSessionView({
           />
         </label>
 
-      </div>
-
-      <div className="card">
-        <h2>Local tests (optional)</h2>
-        <p className="hint">
-          Configure a single test command to run as part of the check. The
-          command runs locally in your repo; failing tests block the commit.
-        </p>
-
         <label className="field">
-          <span>Test command</span>
+          <span>Test command (optional)</span>
           <input
             type="text"
             value={testCommand}
@@ -147,24 +138,22 @@ export function StartSessionView({
         </label>
       </div>
 
-      <div className="card">
-        <div className="actions">
-          <button
-            type="button"
-            className="secondary"
-            disabled={isRunning}
-            onClick={onBack}
-          >
-            Back
-          </button>
-          <button type="button" disabled={!canRun} onClick={onRunCheck}>
-            {isRunning
-              ? "Running check..."
-              : runTests
-                ? "Run check with tests"
-                : "Run readiness check"}
-          </button>
-        </div>
+      <div className="actions">
+        <button
+          type="button"
+          className="secondary"
+          disabled={isRunning}
+          onClick={onBack}
+        >
+          Back
+        </button>
+        <button type="button" disabled={!canRun} onClick={onRunCheck}>
+          {isRunning
+            ? "Running check..."
+            : runTests
+              ? "Run check with tests"
+              : "Run readiness check"}
+        </button>
       </div>
     </section>
   );
