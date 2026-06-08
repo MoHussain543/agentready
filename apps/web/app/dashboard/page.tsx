@@ -1,8 +1,15 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { UpgradeButton } from "@/components/UpgradeButton";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ upgraded?: string }>;
+}) {
   const user = await currentUser();
+  const { upgraded } = await searchParams;
 
   return (
     <div className="min-h-screen bg-[#09090d] text-[#edf2ff]">
@@ -10,13 +17,18 @@ export default async function DashboardPage() {
       <nav className="border-b border-white/5 bg-[#09090d]/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="font-bold text-lg tracking-tight text-white">AgentReady</Link>
-          <div className="flex items-center gap-4 text-sm text-[#9aa5c4]">
-            <span>{user?.emailAddresses[0]?.emailAddress}</span>
-          </div>
+          <UserButton />
         </div>
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 py-16">
+
+        {upgraded === "true" && (
+          <div className="mb-8 p-4 rounded-xl border border-emerald-500/25 bg-emerald-500/5 text-emerald-400 text-sm font-medium">
+            🎉 Welcome to Pro! Alignment review is now active on every check.
+          </div>
+        )}
+
         <h1 className="text-3xl font-bold text-white mb-2">
           Welcome{user?.firstName ? `, ${user.firstName}` : ""}.
         </h1>
@@ -33,7 +45,7 @@ export default async function DashboardPage() {
             </p>
             <button
               type="button"
-              className="px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition-colors"
+              className="px-5 py-2.5 rounded-lg border border-white/15 text-white text-sm font-semibold opacity-50 cursor-not-allowed"
               disabled
             >
               Download for Mac — coming soon
@@ -45,15 +57,9 @@ export default async function DashboardPage() {
               <div>
                 <h2 className="font-semibold text-white mb-1">Pro plan</h2>
                 <p className="text-sm text-[#9aa5c4] mb-4">
-                  Unlock AI alignment review on every check. $9/month, cancel any time.
+                  Unlock AI alignment review on every check. Cancel any time.
                 </p>
-                <button
-                  type="button"
-                  className="px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition-colors"
-                  disabled
-                >
-                  Upgrade to Pro — coming soon
-                </button>
+                <UpgradeButton />
               </div>
               <span className="flex-shrink-0 px-3 py-1 rounded-full bg-brand-600/15 border border-brand-600/30 text-brand-400 text-xs font-bold">
                 FREE
