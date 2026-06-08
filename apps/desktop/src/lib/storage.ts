@@ -31,6 +31,7 @@ export interface ReportHistoryEntry {
   path: string;
   generatedAt: string;
   verdict: Verdict;
+  featureTitle?: string | null;
   verdictExplanation?: string | null;
   totalFiles: number;
   warnCount: number;

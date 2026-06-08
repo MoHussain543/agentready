@@ -136,8 +136,13 @@ export function ReportsView({
                         >
                           <VerdictBadge verdict={entry.verdict} />
                           <span className="history-entry-body">
-                            {entry.verdictExplanation && (
+                            {(entry.featureTitle || entry.verdictExplanation) && (
                               <span className="history-entry-title">
+                                {entry.featureTitle || entry.verdictExplanation}
+                              </span>
+                            )}
+                            {entry.featureTitle && entry.verdictExplanation && (
+                              <span className="history-entry-subtitle">
                                 {entry.verdictExplanation}
                               </span>
                             )}

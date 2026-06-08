@@ -57,7 +57,7 @@ export function StartSessionView({
   const lastRunAt = latestSession?.lastReadinessRunAt ?? null;
   const isFirstRun = !latestVerdict && !lastRunAt;
   const isNoDiff = error?.includes("No uncommitted changes to check yet");
-  const canRun = session.description.trim().length > 0 && !isRunning;
+  const canRun = session.title.trim().length > 0 && session.description.trim().length > 0 && !isRunning;
 
   const testCommandMissing = runTests && testCommand.trim().length === 0;
   const normalizedTestCwd = testCommandCwd.trim().replace(/^\.\/+/, "");
@@ -66,7 +66,14 @@ export function StartSessionView({
     : repoPath;
 
   if (isRunning) {
-    return <RunningOverlay />;
+    const repoName = repoPath.split("/").filter(Boolean).pop() ?? repoPath;
+    return (
+      <RunningOverlay
+        repoName={repoName}
+        specTitle={session.title.trim()}
+        withTests={runTests && testCommand.trim().length > 0}
+      />
+    );
   }
 
   return (
@@ -142,16 +149,27 @@ export function StartSessionView({
           Used to generate the repair prompt and, in Pro, to verify feature alignment.
         </p>
         <label className="field">
-          <textarea
-            rows={6}
-            value={session.description}
-            placeholder="Describe what you asked the AI to build — e.g. add a 404 response for missing users in the API"
+          <span>Title</span>
+          <input
+            type="text"
+            value={session.title}
+            placeholder="Add 404 response for missing users"
             disabled={isRunning}
-            onChange={(e) => {
-              const value = e.target.value;
-              const title = value.split("\n")[0].slice(0, 120) || value.slice(0, 120);
-              onSessionChange({ ...session, title, description: value });
-            }}
+            onChange={(e) =>
+              onSessionChange({ ...session, title: e.target.value })
+            }
+          />
+        </label>
+        <label className="field">
+          <span>Details</span>
+          <textarea
+            rows={5}
+            value={session.description}
+            placeholder="Describe what you asked the AI to build in more detail — context here helps the repair prompt and alignment review."
+            disabled={isRunning}
+            onChange={(e) =>
+              onSessionChange({ ...session, description: e.target.value })
+            }
           />
         </label>
       </div>
@@ -308,7 +326,15 @@ const RUNNING_MESSAGES = [
   "Almost done…",
 ];
 
-function RunningOverlay() {
+function RunningOverlay({
+  repoName,
+  specTitle,
+  withTests,
+}: {
+  repoName: string;
+  specTitle: string;
+  withTests: boolean;
+}) {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 
@@ -331,6 +357,15 @@ function RunningOverlay() {
 
   return (
     <div className="run-overlay">
+      <div className="run-overlay-context">
+        <span className="run-overlay-repo">{repoName}</span>
+        {specTitle && (
+          <span className="run-overlay-spec">{specTitle}</span>
+        )}
+        {withTests && (
+          <span className="run-overlay-tests">including tests</span>
+        )}
+      </div>
       <div className="run-spinner" />
       <p className={`run-message${visible ? " run-message-visible" : ""}`}>
         {RUNNING_MESSAGES[index]}

@@ -74,6 +74,7 @@ pub struct ReportHistoryEntry {
     pub path: String,
     pub generated_at: String,
     pub verdict: String,
+    pub feature_title: Option<String>,
     pub verdict_explanation: Option<String>,
     pub total_files: i32,
     pub warn_count: i32,
@@ -288,6 +289,11 @@ pub fn list_reports(repo_path: &str) -> Result<Vec<ReportHistoryEntry>, String> 
     let repo = validated_repo(repo_path)?;
     let dir = reports_dir(&repo);
 
+    // Read the current feature spec title once — used as the primary retrieval label for all entries.
+    let spec_title: Option<String> = read_json::<FeatureSpec>(&feature_spec_path(&repo))?
+        .map(|spec| spec.title)
+        .filter(|t| !t.trim().is_empty());
+
     let mut entries = Vec::new();
     if let Ok(read_dir) = fs::read_dir(&dir) {
         for entry in read_dir.filter_map(Result::ok) {
@@ -304,6 +310,7 @@ pub fn list_reports(repo_path: &str) -> Result<Vec<ReportHistoryEntry>, String> 
                         file_name,
                         generated_at: report.generated_at,
                         verdict: report.verdict,
+                        feature_title: spec_title.clone(),
                         verdict_explanation: report.verdict_explanation,
                         total_files: report.diff_summary.total_files,
                         warn_count: report.summary.warn,

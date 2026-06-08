@@ -41,7 +41,7 @@ body {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 68px;
+  width: 76px;
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -85,11 +85,13 @@ body {
 .sidebar-nav-item {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 40px;
-  padding: 0;
+  gap: 3px;
+  width: 58px;
+  min-height: 48px;
+  padding: 6px 4px 5px;
   border-radius: 10px;
   background: transparent;
   border: 1px solid transparent;
@@ -99,6 +101,15 @@ body {
   letter-spacing: 0;
   font-weight: normal;
   transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.sidebar-nav-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: inherit;
+  user-select: none;
 }
 
 .sidebar-nav-item:hover:not(:disabled) {
@@ -127,14 +138,6 @@ body {
   box-shadow: none;
 }
 
-.sidebar-nav-secondary {
-  opacity: 0.55;
-}
-
-.sidebar-nav-secondary:hover:not(:disabled),
-.sidebar-nav-secondary.active {
-  opacity: 1;
-}
 
 .sidebar-account-btn {
   position: relative;
@@ -178,7 +181,7 @@ body {
 
 .app-content {
   flex: 1;
-  margin-left: 68px;
+  margin-left: 76px;
   padding: 2.25rem 1.5rem 4rem;
   min-height: 100vh;
 }
@@ -915,6 +918,35 @@ body {
   justify-content: center;
   min-height: 60vh;
   gap: 1.75rem;
+}
+
+.run-overlay-context {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  text-align: center;
+}
+
+.run-overlay-repo {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #c4b5fd;
+  letter-spacing: 0.02em;
+}
+
+.run-overlay-spec {
+  font-size: 0.85rem;
+  color: #9aa5c4;
+  max-width: 32rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-overlay-tests {
+  font-size: 0.74rem;
+  color: #6b7a9f;
 }
 
 .run-spinner {
@@ -2102,6 +2134,14 @@ button.primary-purple:active:not(:disabled) {
   font-size: 0.88rem;
   color: #d8e0fb;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-entry-subtitle {
+  font-size: 0.78rem;
+  color: #6b7a9f;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

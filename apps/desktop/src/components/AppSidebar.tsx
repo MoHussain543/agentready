@@ -42,19 +42,19 @@ export function AppSidebar({
           type="button"
           className={`sidebar-nav-item${section === "home" ? " active" : ""}`}
           aria-label="Home"
-          title="Home"
           onClick={onNavigateHome}
         >
           <HomeIcon />
+          <span className="sidebar-nav-label">Home</span>
         </button>
         <button
           type="button"
-          className={`sidebar-nav-item sidebar-nav-secondary${section === "reports" ? " active" : ""}`}
-          aria-label="Reports"
-          title="Reports"
+          className={`sidebar-nav-item${section === "reports" ? " active" : ""}`}
+          aria-label="History"
           onClick={onNavigateReports}
         >
           <HistoryIcon />
+          <span className="sidebar-nav-label">History</span>
         </button>
       </nav>
 
@@ -63,17 +63,16 @@ export function AppSidebar({
           type="button"
           className="sidebar-nav-item"
           aria-label="Help"
-          title="Help"
           onClick={onOpenHelp}
         >
           <HelpIcon />
+          <span className="sidebar-nav-label">Help</span>
         </button>
         {isSignedIn ? (
           <button
             type="button"
             className="sidebar-nav-item sidebar-account-btn"
             aria-label="Account & Settings"
-            title="Account & Settings"
             onClick={onOpenSettings}
           >
             <AccountIcon />
@@ -81,16 +80,17 @@ export function AppSidebar({
               className={`sidebar-account-dot ${isPro ? "sidebar-account-dot-pro" : "sidebar-account-dot-free"}`}
               aria-hidden="true"
             />
+            <span className="sidebar-nav-label">Account</span>
           </button>
         ) : (
           <button
             type="button"
             className="sidebar-nav-item sidebar-signin-btn"
             aria-label="Sign in"
-            title="Sign in"
             onClick={onSignIn}
           >
             <SignInIcon />
+            <span className="sidebar-nav-label">Sign in</span>
           </button>
         )}
         <span className="sidebar-version">{versionLabel}</span>
