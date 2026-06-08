@@ -1462,6 +1462,39 @@ button.primary-purple:active:not(:disabled) {
   padding-top: 0.25rem;
 }
 
+.narrator-confirm {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.65rem 0.8rem;
+}
+
+.narrator-confirm-label {
+  font-size: 0.84rem;
+  color: #c8d4f0;
+  margin: 0 0 0.4rem;
+}
+
+.narrator-staged-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.narrator-staged-list li {
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  color: #7a8aaa;
+}
+
+.narrator-staged-more {
+  color: #556080;
+  font-style: italic;
+}
+
 .narrator-commit-success {
   font-size: 0.84rem;
   color: #34d399;

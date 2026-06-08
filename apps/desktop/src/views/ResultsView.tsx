@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FeatureSessionInput, ProReview, ReadinessReport, TestResult } from "../types";
-import { gitCommit } from "../lib/git";
+import { getStagedFiles, gitCommit } from "../lib/git";
 import { generateNarrative, type NarrativeOutput } from "../lib/narrate";
 
 interface ResultsViewProps {
@@ -34,6 +34,8 @@ export function ResultsView({
   const [narrativeError, setNarrativeError] = useState<string | null>(null);
   const [copiedCommit, setCopiedCommit] = useState(false);
   const [copiedPr, setCopiedPr] = useState(false);
+  const [commitStage, setCommitStage] = useState<"idle" | "confirming" | "done">("idle");
+  const [stagedFiles, setStagedFiles] = useState<string[]>([]);
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitResult, setCommitResult] = useState<string | null>(null);
   const [commitError, setCommitError] = useState<string | null>(null);
@@ -60,16 +62,32 @@ export function ResultsView({
     }
   };
 
-  const handleCommit = async () => {
+  const handleCommitClick = async () => {
+    if (!narrative) return;
+    setCommitError(null);
+    setIsCommitting(true);
+    try {
+      const files = await getStagedFiles(repoPath);
+      setStagedFiles(files);
+      setCommitStage("confirming");
+    } catch (err) {
+      setCommitError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsCommitting(false);
+    }
+  };
+
+  const handleCommitConfirm = async () => {
     if (!narrative) return;
     setIsCommitting(true);
     setCommitError(null);
-    setCommitResult(null);
     try {
       const output = await gitCommit(repoPath, narrative.commitMessage);
       setCommitResult(output || "Committed successfully.");
+      setCommitStage("done");
     } catch (err) {
       setCommitError(err instanceof Error ? err.message : String(err));
+      setCommitStage("idle");
     } finally {
       setIsCommitting(false);
     }
@@ -218,35 +236,76 @@ export function ResultsView({
               <div className="narrator-pr-title">{narrative.prTitle}</div>
               <pre className="narrator-commit">{narrative.prBody}</pre>
             </div>
-            {commitResult && (
-              <p className="narrator-commit-success">{commitResult}</p>
-            )}
             {commitError && (
               <p className="narrator-error">{commitError}</p>
             )}
+
+            {commitStage === "confirming" && (
+              <div className="narrator-confirm">
+                <p className="narrator-confirm-label">
+                  Commit {stagedFiles.length} staged {stagedFiles.length === 1 ? "file" : "files"}:
+                </p>
+                <ul className="narrator-staged-list">
+                  {stagedFiles.slice(0, 6).map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                  {stagedFiles.length > 6 && (
+                    <li className="narrator-staged-more">+{stagedFiles.length - 6} more</li>
+                  )}
+                </ul>
+              </div>
+            )}
+
+            {commitStage === "done" && commitResult && (
+              <p className="narrator-commit-success">{commitResult}</p>
+            )}
+
             <div className="narrator-actions">
-              {!commitResult && (
+              {commitStage === "idle" && (
                 <button
                   type="button"
                   className="primary-purple"
                   disabled={isCommitting || isGenerating}
-                  onClick={() => void handleCommit()}
+                  onClick={() => void handleCommitClick()}
                 >
-                  {isCommitting ? "Committing…" : "Commit"}
+                  {isCommitting ? "Checking…" : "Commit"}
                 </button>
               )}
-              <button
-                type="button"
-                className="secondary"
-                disabled={isCommitting || isGenerating}
-                onClick={() => {
-                  setCommitResult(null);
-                  setCommitError(null);
-                  void handleGenerateNarrative();
-                }}
-              >
-                {isGenerating ? "Regenerating…" : "Regenerate"}
-              </button>
+              {commitStage === "confirming" && (
+                <>
+                  <button
+                    type="button"
+                    className="primary-purple"
+                    disabled={isCommitting || stagedFiles.length === 0}
+                    onClick={() => void handleCommitConfirm()}
+                  >
+                    {isCommitting ? "Committing…" : `Confirm commit`}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={isCommitting}
+                    onClick={() => { setCommitStage("idle"); setCommitError(null); }}
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+              {commitStage !== "done" && (
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={isCommitting || isGenerating}
+                  onClick={() => {
+                    setCommitStage("idle");
+                    setCommitResult(null);
+                    setCommitError(null);
+                    void handleGenerateNarrative();
+                  }}
+                >
+                  {isGenerating ? "Regenerating…" : "Regenerate"}
+                </button>
+              )}
             </div>
           </div>
         ) : (

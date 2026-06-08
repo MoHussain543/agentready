@@ -107,7 +107,57 @@ async fn generate_narrative(input: narrate::NarrateInput) -> Result<narrate::Nar
 }
 
 #[tauri::command]
+fn get_staged_files(repo_path: String) -> Result<Vec<String>, String> {
+    // Verify it's a git repo first
+    let check = std::process::Command::new("git")
+        .args(["rev-parse", "--git-dir"])
+        .current_dir(&repo_path)
+        .output()
+        .map_err(|e| format!("Failed to run git: {e}"))?;
+    if !check.status.success() {
+        return Err("Not a git repository.".to_string());
+    }
+
+    let output = std::process::Command::new("git")
+        .args(["diff", "--cached", "--name-only"])
+        .current_dir(&repo_path)
+        .output()
+        .map_err(|e| format!("Failed to check staged files: {e}"))?;
+
+    let files = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|l| !l.is_empty())
+        .map(|l| l.to_string())
+        .collect();
+    Ok(files)
+}
+
+#[tauri::command]
 fn git_commit(repo_path: String, message: String) -> Result<String, String> {
+    // Guard: must be a git repo
+    let check = std::process::Command::new("git")
+        .args(["rev-parse", "--git-dir"])
+        .current_dir(&repo_path)
+        .output()
+        .map_err(|e| format!("Failed to run git: {e}"))?;
+    if !check.status.success() {
+        return Err("Not a git repository.".to_string());
+    }
+
+    // Guard: must have staged changes
+    let staged = std::process::Command::new("git")
+        .args(["diff", "--cached", "--name-only"])
+        .current_dir(&repo_path)
+        .output()
+        .map_err(|e| format!("Failed to check staged files: {e}"))?;
+    let staged_count = String::from_utf8_lossy(&staged.stdout)
+        .lines()
+        .filter(|l| !l.is_empty())
+        .count();
+    if staged_count == 0 {
+        return Err("No staged changes to commit. Use `git add` to stage your changes first.".to_string());
+    }
+
     let output = std::process::Command::new("git")
         .arg("commit")
         .arg("-m")
@@ -295,6 +345,7 @@ pub fn run() {
             clear_auth_token,
             open_sign_in,
             generate_narrative,
+            get_staged_files,
             git_commit,
             contextforge::check_context_forge_status,
             contextforge::generate_context_files,
