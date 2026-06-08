@@ -74,6 +74,11 @@ pub struct ReportHistoryEntry {
     pub path: String,
     pub generated_at: String,
     pub verdict: String,
+    pub verdict_explanation: Option<String>,
+    pub total_files: i32,
+    pub warn_count: i32,
+    pub fail_count: i32,
+    pub test_status: Option<String>,
 }
 
 /// Create `.agentready/` storage if missing and load any existing feature spec.
@@ -299,6 +304,11 @@ pub fn list_reports(repo_path: &str) -> Result<Vec<ReportHistoryEntry>, String> 
                         file_name,
                         generated_at: report.generated_at,
                         verdict: report.verdict,
+                        verdict_explanation: report.verdict_explanation,
+                        total_files: report.diff_summary.total_files,
+                        warn_count: report.summary.warn,
+                        fail_count: report.summary.fail,
+                        test_status: report.test_result.map(|t| t.status),
                     });
                 }
             }

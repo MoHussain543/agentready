@@ -135,8 +135,33 @@ export function ReportsView({
                           onClick={() => onOpenReport(entry)}
                         >
                           <VerdictBadge verdict={entry.verdict} />
-                          <span className="meta">
-                            {new Date(entry.generatedAt).toLocaleString()}
+                          <span className="history-entry-body">
+                            {entry.verdictExplanation && (
+                              <span className="history-entry-title">
+                                {entry.verdictExplanation}
+                              </span>
+                            )}
+                            <span className="history-entry-meta">
+                              <span className="meta">
+                                {new Date(entry.generatedAt).toLocaleString()}
+                              </span>
+                              <span className="history-entry-stats">
+                                {entry.totalFiles > 0 && (
+                                  <span>{entry.totalFiles} file{entry.totalFiles === 1 ? "" : "s"}</span>
+                                )}
+                                {entry.warnCount > 0 && (
+                                  <span className="history-stat-warn">{entry.warnCount} warn</span>
+                                )}
+                                {entry.failCount > 0 && (
+                                  <span className="history-stat-fail">{entry.failCount} fail</span>
+                                )}
+                                {(entry.testStatus === "pass" || entry.testStatus === "fail") && (
+                                  <span className={`history-stat-test history-stat-test-${entry.testStatus}`}>
+                                    tests {entry.testStatus === "pass" ? "passed" : "failed"}
+                                  </span>
+                                )}
+                              </span>
+                            </span>
                           </span>
                         </button>
                         <button

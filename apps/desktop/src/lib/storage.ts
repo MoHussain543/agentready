@@ -31,6 +31,11 @@ export interface ReportHistoryEntry {
   path: string;
   generatedAt: string;
   verdict: Verdict;
+  verdictExplanation?: string | null;
+  totalFiles: number;
+  warnCount: number;
+  failCount: number;
+  testStatus?: string | null;
 }
 
 export async function initRepoStorage(

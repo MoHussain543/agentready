@@ -2181,6 +2181,58 @@ button.primary-purple:active:not(:disabled) {
   color: #a78bfa;
 }
 
+.history-entry-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.history-entry-title {
+  font-size: 0.88rem;
+  color: #d8e0fb;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.history-entry-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+  color: #6b7a9f;
+}
+
+.history-entry-stats span {
+  white-space: nowrap;
+}
+
+.history-stat-warn {
+  color: #ca9a20;
+}
+
+.history-stat-fail {
+  color: #c0504a;
+}
+
+.history-stat-test-pass {
+  color: #2d9e5a;
+}
+
+.history-stat-test-fail {
+  color: #c0504a;
+}
+
 .history-entry-row {
   display: flex;
   align-items: center;
