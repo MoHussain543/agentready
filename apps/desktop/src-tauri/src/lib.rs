@@ -106,6 +106,25 @@ async fn generate_narrative(input: narrate::NarrateInput) -> Result<narrate::Nar
     narrate::generate(input).await
 }
 
+#[tauri::command]
+fn git_commit(repo_path: String, message: String) -> Result<String, String> {
+    let output = std::process::Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg(&message)
+        .current_dir(&repo_path)
+        .output()
+        .map_err(|e| format!("Failed to run git: {e}"))?;
+
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        Err(if !stderr.is_empty() { stderr } else { stdout })
+    }
+}
+
 /// Opens the sign-in page in the default browser using a local HTTP callback server.
 /// The browser signs the user in, then redirects to our local server with the token.
 /// No URL scheme registration required — works in dev mode and production.
@@ -276,6 +295,7 @@ pub fn run() {
             clear_auth_token,
             open_sign_in,
             generate_narrative,
+            git_commit,
             contextforge::check_context_forge_status,
             contextforge::generate_context_files,
         ])

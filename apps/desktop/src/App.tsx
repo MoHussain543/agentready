@@ -32,7 +32,6 @@ import { ReportsView } from "./views/ReportsView";
 import { ResultsView } from "./views/ResultsView";
 import { SettingsModal } from "./views/SettingsModal";
 import { StartSessionView } from "./views/StartSessionView";
-import { WelcomeView } from "./views/WelcomeView";
 
 const INITIAL_SESSION: FeatureSessionInput = {
   title: "",
@@ -393,18 +392,12 @@ function App() {
     goTo("home");
   };
 
-  // Don't render until we know whether the user is signed in (avoids flash)
+  // Don't render until auth state is known (avoids flash)
   if (!authChecked) {
     return null;
   }
 
-  if (!authToken) {
-    return (
-      <div className="app">
-        <WelcomeView onSignIn={() => void handleSignIn()} />
-      </div>
-    );
-  }
+  const isSignedIn = authToken !== null;
 
   return (
     <div className="app-shell">
@@ -417,6 +410,7 @@ function App() {
         onNavigateReports={handleBrowseProjectsWithReports}
         onOpenHelp={() => setIsHelpOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onSignIn={() => void handleSignIn()}
       />
 
       <main className="app-content">
@@ -471,6 +465,7 @@ function App() {
             contextForgeStatus={contextForgeStatus}
             isGeneratingContext={isGeneratingContext}
             contextForgeError={contextForgeError}
+            isSignedIn={isSignedIn}
             isPro={isPro}
             onGenerateContextFiles={() => void handleGenerateContextFiles()}
             onSessionChange={(session) =>

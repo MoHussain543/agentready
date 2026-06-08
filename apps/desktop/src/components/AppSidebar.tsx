@@ -14,6 +14,7 @@ interface AppSidebarProps {
   onNavigateReports: () => void;
   onOpenHelp: () => void;
   onOpenSettings: () => void;
+  onSignIn: () => void;
 }
 
 export function AppSidebar({
@@ -25,6 +26,7 @@ export function AppSidebar({
   onNavigateReports,
   onOpenHelp,
   onOpenSettings,
+  onSignIn,
 }: AppSidebarProps) {
   const section = activeSection(screen);
   const isSignedIn = authToken !== null;
@@ -66,21 +68,31 @@ export function AppSidebar({
         >
           <HelpIcon />
         </button>
-        <button
-          type="button"
-          className="sidebar-nav-item sidebar-account-btn"
-          aria-label="Account & Settings"
-          title="Account & Settings"
-          onClick={onOpenSettings}
-        >
-          <AccountIcon />
-          {isSignedIn && (
+        {isSignedIn ? (
+          <button
+            type="button"
+            className="sidebar-nav-item sidebar-account-btn"
+            aria-label="Account & Settings"
+            title="Account & Settings"
+            onClick={onOpenSettings}
+          >
+            <AccountIcon />
             <span
               className={`sidebar-account-dot ${isPro ? "sidebar-account-dot-pro" : "sidebar-account-dot-free"}`}
               aria-hidden="true"
             />
-          )}
-        </button>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="sidebar-nav-item sidebar-signin-btn"
+            aria-label="Sign in"
+            title="Sign in"
+            onClick={onSignIn}
+          >
+            <SignInIcon />
+          </button>
+        )}
         <span className="sidebar-version">{versionLabel}</span>
       </div>
     </aside>
@@ -142,6 +154,27 @@ function AccountIcon() {
         strokeWidth="1.3"
         strokeLinecap="round"
       />
+    </svg>
+  );
+}
+
+function SignInIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path
+        d="M7 3.5H4a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M12 12.5l3-3.5-3-3.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M15 9H7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }

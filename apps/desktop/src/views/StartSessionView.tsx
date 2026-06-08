@@ -17,6 +17,7 @@ interface StartSessionViewProps {
   contextForgeStatus: ContextForgeStatus | null;
   isGeneratingContext: boolean;
   contextForgeError: string | null;
+  isSignedIn: boolean;
   isPro: boolean;
   onSessionChange: (session: FeatureSessionInput) => void;
   onTestCommandChange: (testCommand: string) => void;
@@ -41,6 +42,7 @@ export function StartSessionView({
   contextForgeStatus,
   isGeneratingContext,
   contextForgeError,
+  isSignedIn,
   isPro,
   onSessionChange,
   onTestCommandChange,
@@ -128,6 +130,7 @@ export function StartSessionView({
           status={contextForgeStatus}
           isGenerating={isGeneratingContext}
           error={contextForgeError}
+          isSignedIn={isSignedIn}
           isPro={isPro}
           onGenerate={onGenerateContextFiles}
         />
@@ -225,12 +228,14 @@ function ContextForgeBanner({
   status,
   isGenerating,
   error,
+  isSignedIn,
   isPro,
   onGenerate,
 }: {
   status: ContextForgeStatus;
   isGenerating: boolean;
   error: string | null;
+  isSignedIn: boolean;
   isPro: boolean;
   onGenerate: () => void;
 }) {
@@ -248,6 +253,10 @@ function ContextForgeBanner({
         </div>
         {bothPresent ? (
           <span className="contextforge-status-ok">Context files ready</span>
+        ) : !isSignedIn ? (
+          <p className="contextforge-desc">
+            Sign in to generate .cursorrules and AGENTS.md for this stack.
+          </p>
         ) : !isPro ? (
           <p className="contextforge-desc">
             Upgrade to Pro to generate .cursorrules and AGENTS.md for this stack.

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FeatureSessionInput, ProReview, ReadinessReport, TestResult } from "../types";
+import { gitCommit } from "../lib/git";
 import { generateNarrative, type NarrativeOutput } from "../lib/narrate";
 
 interface ResultsViewProps {
@@ -33,6 +34,9 @@ export function ResultsView({
   const [narrativeError, setNarrativeError] = useState<string | null>(null);
   const [copiedCommit, setCopiedCommit] = useState(false);
   const [copiedPr, setCopiedPr] = useState(false);
+  const [isCommitting, setIsCommitting] = useState(false);
+  const [commitResult, setCommitResult] = useState<string | null>(null);
+  const [commitError, setCommitError] = useState<string | null>(null);
 
   const handleGenerateNarrative = async () => {
     if (!authToken) return;
@@ -53,6 +57,21 @@ export function ResultsView({
       setNarrativeError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleCommit = async () => {
+    if (!narrative) return;
+    setIsCommitting(true);
+    setCommitError(null);
+    setCommitResult(null);
+    try {
+      const output = await gitCommit(repoPath, narrative.commitMessage);
+      setCommitResult(output || "Committed successfully.");
+    } catch (err) {
+      setCommitError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsCommitting(false);
     }
   };
 
@@ -199,14 +218,34 @@ export function ResultsView({
               <div className="narrator-pr-title">{narrative.prTitle}</div>
               <pre className="narrator-commit">{narrative.prBody}</pre>
             </div>
+            {commitResult && (
+              <p className="narrator-commit-success">{commitResult}</p>
+            )}
+            {commitError && (
+              <p className="narrator-error">{commitError}</p>
+            )}
             <div className="narrator-actions">
+              {!commitResult && (
+                <button
+                  type="button"
+                  className="primary-purple"
+                  disabled={isCommitting || isGenerating}
+                  onClick={() => void handleCommit()}
+                >
+                  {isCommitting ? "Committing…" : "Commit"}
+                </button>
+              )}
               <button
                 type="button"
                 className="secondary"
-                disabled={isGenerating}
-                onClick={() => void handleGenerateNarrative()}
+                disabled={isCommitting || isGenerating}
+                onClick={() => {
+                  setCommitResult(null);
+                  setCommitError(null);
+                  void handleGenerateNarrative();
+                }}
               >
-                {isGenerating ? "Regenerating..." : "Regenerate"}
+                {isGenerating ? "Regenerating…" : "Regenerate"}
               </button>
             </div>
           </div>
