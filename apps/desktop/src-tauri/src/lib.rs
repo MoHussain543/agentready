@@ -1,6 +1,7 @@
 mod auth;
 mod engine;
 mod models;
+mod narrate;
 mod pro_review;
 mod settings;
 mod storage;
@@ -97,6 +98,11 @@ fn save_auth_token(app: tauri::AppHandle, token: String) -> Result<(), String> {
 #[tauri::command]
 fn clear_auth_token(app: tauri::AppHandle) -> Result<(), String> {
     auth::clear_token(&app)
+}
+
+#[tauri::command]
+async fn generate_narrative(input: narrate::NarrateInput) -> Result<narrate::NarrateOutput, String> {
+    narrate::generate(input).await
 }
 
 /// Opens the sign-in page in the default browser using a local HTTP callback server.
@@ -268,6 +274,7 @@ pub fn run() {
             save_auth_token,
             clear_auth_token,
             open_sign_in,
+            generate_narrative,
         ])
         .run(tauri::generate_context!())
         .expect("error while running AgentReady desktop");

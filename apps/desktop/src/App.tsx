@@ -3,7 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 
 import { loadAppSettings, saveAppSettings, type AppSettings } from "./lib/appSettings";
-import { getAuthToken, clearAuthToken, openSignIn } from "./lib/auth";
+import { getAuthToken, clearAuthToken, openSignIn, decodeTokenClaims, isTokenExpired } from "./lib/auth";
 import { buildFeatureSpec, sessionInputFromSpec } from "./lib/featureSpec";
 import {
   loadRecentProjects,
@@ -24,12 +24,14 @@ import {
 } from "./lib/storage";
 import type { AppScreen, AppState, FeatureSessionInput } from "./types";
 import type { ReportHistoryEntry } from "./lib/storage";
+import { AppSidebar } from "./components/AppSidebar";
 import { HelpModal } from "./views/HelpModal";
 import { HomeView } from "./views/HomeView";
 import { ReportsView } from "./views/ReportsView";
 import { ResultsView } from "./views/ResultsView";
 import { SettingsModal } from "./views/SettingsModal";
 import { StartSessionView } from "./views/StartSessionView";
+import { WelcomeView } from "./views/WelcomeView";
 
 const INITIAL_SESSION: FeatureSessionInput = {
   title: "",
@@ -89,23 +91,34 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     void loadAppSettings()
       .then(setAppSettings)
+      .catch(() => {});
+
+    void getAuthToken()
+      .then((token) => {
+        setAuthToken(token);
+        setAuthChecked(true);
+      })
       .catch(() => {
-        // Keep the home screen usable even if the settings file is unavailable.
+        setAuthChecked(true);
       });
 
-    void getAuthToken().then(setAuthToken).catch(() => null);
-
-    // Rust emits this event after saving the token (via HTTP callback or deep link)
     const unlistenPromise = listen("auth-token-saved", () => {
-      void getAuthToken().then(setAuthToken);
+      void getAuthToken().then((token) => {
+        setAuthToken(token);
+        setIsSettingsOpen(false);
+        setState((current) => ({ ...current, screen: "home" }));
+      });
     });
     return () => { void unlistenPromise.then((fn) => fn()); };
   }, []);
 
+  const claims = authToken ? decodeTokenClaims(authToken) : null;
+  const isPro = claims?.pro === true && !(claims ? isTokenExpired(claims) : false);
   const versionLabel = `v${appSettings?.appVersion ?? "0.1.0"}`;
 
   const goTo = (screen: AppScreen) => {
@@ -319,8 +332,6 @@ function App() {
             }
           : current,
       );
-      // If the user had been viewing this exact report in results, clear it so
-      // back-navigation does not silently render a deleted report's data.
       if (resultsBackTarget === "reports" && state.report?.generatedAt === entry.generatedAt) {
         setState((current) => ({ ...current, report: null }));
       }
@@ -353,116 +364,145 @@ function App() {
     }
   };
 
+  const handleNavigateHome = () => {
+    setError(null);
+    goTo("home");
+  };
+
+  // Don't render until we know whether the user is signed in (avoids flash)
+  if (!authChecked) {
+    return null;
+  }
+
+  if (!authToken) {
+    return (
+      <div className="app">
+        <WelcomeView onSignIn={() => void handleSignIn()} />
+      </div>
+    );
+  }
+
   return (
-    <main className="app">
-      {state.screen === "home" && (
-        <HomeView
-          recentProjects={recentProjects}
-          versionLabel={versionLabel}
-          isBusy={isBusy}
-          error={error}
-          onOpenProject={handleOpenProject}
-          onOpenRecentProject={(repoPath) => void openRepo(repoPath)}
-          onViewSavedReports={handleBrowseProjectsWithReports}
-          onOpenHelp={() => setIsHelpOpen(true)}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-        />
-      )}
+    <div className="app-shell">
+      <AppSidebar
+        screen={state.screen}
+        authToken={authToken}
+        isPro={isPro}
+        versionLabel={versionLabel}
+        onNavigateHome={handleNavigateHome}
+        onNavigateReports={handleBrowseProjectsWithReports}
+        onOpenHelp={() => setIsHelpOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
-      {state.screen === "reports" && (
-        <ReportsView
-          projects={projectsWithReports(recentProjects)}
-          selectedProject={reportBrowserProject}
-          reports={reportBrowserEntries}
-          isBusy={isBusy}
-          error={error}
-          onBackHome={() => {
-            setError(null);
-            goTo("home");
-          }}
-          onSelectProject={(project) => void handleSelectReportProject(project)}
-          onBackToProjects={() => {
-            setError(null);
-            setReportBrowserProject(null);
-            setReportBrowserEntries([]);
-          }}
-          onOpenReport={(entry) => {
-            if (reportBrowserProject) {
-              void handleOpenSavedReport(reportBrowserProject, entry);
-            }
-          }}
-          onDeleteReport={(entry) => void handleDeleteReport(entry)}
-        />
-      )}
+      <main className="app-content">
+        {state.screen === "home" && (
+          <HomeView
+            recentProjects={recentProjects}
+            isBusy={isBusy}
+            error={error}
+            onOpenProject={handleOpenProject}
+            onBrowseHistory={handleBrowseProjectsWithReports}
+            onOpenRecentProject={(repoPath) => void openRepo(repoPath)}
+          />
+        )}
 
-      {state.screen === "session" && (
-        <StartSessionView
-          repoPath={state.repoPath}
-          session={state.session}
-          testCommand={state.testCommand}
-          testCommandCwd={state.testCommandCwd}
-          runTests={state.runTests}
-          latestSession={state.currentSession}
-          hasLatestReport={state.report !== null}
-          isRunning={isRunning}
-          error={error}
-          onSessionChange={(session) =>
-            setState((current) => ({ ...current, session }))
-          }
-          onTestCommandChange={(testCommand) =>
-            setState((current) => ({ ...current, testCommand }))
-          }
-          onTestCommandCwdChange={(testCommandCwd) =>
-            setState((current) => ({ ...current, testCommandCwd }))
-          }
-          onRunTestsChange={(runTests) =>
-            setState((current) => ({ ...current, runTests }))
-          }
-          onViewLatest={async () => {
-            setError(null);
-            try {
-              const latestReport = await loadLatestReport(state.repoPath);
-              if (!latestReport) {
-                setError("No saved report is available for this repository yet.");
-                return;
+        {state.screen === "reports" && (
+          <ReportsView
+            projects={projectsWithReports(recentProjects)}
+            selectedProject={reportBrowserProject}
+            reports={reportBrowserEntries}
+            isBusy={isBusy}
+            error={error}
+            onBackHome={() => {
+              setError(null);
+              goTo("home");
+            }}
+            onSelectProject={(project) => void handleSelectReportProject(project)}
+            onBackToProjects={() => {
+              setError(null);
+              setReportBrowserProject(null);
+              setReportBrowserEntries([]);
+            }}
+            onOpenReport={(entry) => {
+              if (reportBrowserProject) {
+                void handleOpenSavedReport(reportBrowserProject, entry);
               }
-              setResultsBackTarget("session");
-              setState((current) => ({
-                ...current,
-                report: latestReport,
-                screen: "results",
-                isLatestReport: true,
-              }));
-            } catch (loadError) {
-              setError(
-                errorMessage(loadError, "Failed to load the latest saved report."),
-              );
-            }
-          }}
-          onBack={() => {
-            setError(null);
-            goTo("home");
-          }}
-          onRunCheck={() => void runCheck(true)}
-        />
-      )}
+            }}
+            onDeleteReport={(entry) => void handleDeleteReport(entry)}
+          />
+        )}
 
-      {state.screen === "results" && state.report && (
-        <ResultsView
-          repoPath={state.repoPath}
-          session={state.session}
-          report={state.report}
-          isLatestReport={state.isLatestReport}
-          latestReportPath={state.currentSession?.latestReportPath ?? null}
-          isRunning={isRunning}
-          error={error}
-          onBack={() => {
-            setError(null);
-            goTo(resultsBackTarget);
-          }}
-          onRerun={() => void runCheck(false)}
-        />
-      )}
+        {state.screen === "session" && (
+          <StartSessionView
+            repoPath={state.repoPath}
+            session={state.session}
+            testCommand={state.testCommand}
+            testCommandCwd={state.testCommandCwd}
+            runTests={state.runTests}
+            latestSession={state.currentSession}
+            hasLatestReport={state.report !== null}
+            isRunning={isRunning}
+            error={error}
+            onSessionChange={(session) =>
+              setState((current) => ({ ...current, session }))
+            }
+            onTestCommandChange={(testCommand) =>
+              setState((current) => ({ ...current, testCommand }))
+            }
+            onTestCommandCwdChange={(testCommandCwd) =>
+              setState((current) => ({ ...current, testCommandCwd }))
+            }
+            onRunTestsChange={(runTests) =>
+              setState((current) => ({ ...current, runTests }))
+            }
+            onViewLatest={async () => {
+              setError(null);
+              try {
+                const latestReport = await loadLatestReport(state.repoPath);
+                if (!latestReport) {
+                  setError("No saved report is available for this repository yet.");
+                  return;
+                }
+                setResultsBackTarget("session");
+                setState((current) => ({
+                  ...current,
+                  report: latestReport,
+                  screen: "results",
+                  isLatestReport: true,
+                }));
+              } catch (loadError) {
+                setError(
+                  errorMessage(loadError, "Failed to load the latest saved report."),
+                );
+              }
+            }}
+            onBack={() => {
+              setError(null);
+              goTo("home");
+            }}
+            onRunCheck={() => void runCheck(true)}
+          />
+        )}
+
+        {state.screen === "results" && state.report && (
+          <ResultsView
+            repoPath={state.repoPath}
+            session={state.session}
+            report={state.report}
+            isLatestReport={state.isLatestReport}
+            latestReportPath={state.currentSession?.latestReportPath ?? null}
+            isRunning={isRunning}
+            error={error}
+            authToken={authToken}
+            onBack={() => {
+              setError(null);
+              goTo(resultsBackTarget);
+            }}
+            onRerun={() => void runCheck(false)}
+          />
+        )}
+      </main>
 
       {isHelpOpen && <HelpModal onClose={() => setIsHelpOpen(false)} />}
 
@@ -481,7 +521,7 @@ function App() {
           }}
         />
       )}
-    </main>
+    </div>
   );
 }
 

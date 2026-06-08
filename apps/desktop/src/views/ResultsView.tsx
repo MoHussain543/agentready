@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FeatureSessionInput, ProReview, ReadinessReport, TestResult } from "../types";
+import { generateNarrative, type NarrativeOutput } from "../lib/narrate";
 
 interface ResultsViewProps {
   repoPath: string;
@@ -9,6 +10,7 @@ interface ResultsViewProps {
   latestReportPath: string | null;
   isRunning: boolean;
   error: string | null;
+  authToken: string | null;
   onBack: () => void;
   onRerun: () => void;
 }
@@ -21,10 +23,48 @@ export function ResultsView({
   latestReportPath,
   isRunning,
   error,
+  authToken,
   onBack,
   onRerun,
 }: ResultsViewProps) {
   const [copied, setCopied] = useState(false);
+  const [narrative, setNarrative] = useState<NarrativeOutput | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [narrativeError, setNarrativeError] = useState<string | null>(null);
+  const [copiedCommit, setCopiedCommit] = useState(false);
+  const [copiedPr, setCopiedPr] = useState(false);
+
+  const handleGenerateNarrative = async () => {
+    if (!authToken) return;
+    setIsGenerating(true);
+    setNarrativeError(null);
+    try {
+      const result = await generateNarrative({
+        featureTitle: session.title || "Untitled feature",
+        featureDescription: session.description,
+        verdict: report.verdict,
+        diffSummary: report.diffSummary,
+        testResult: report.testResult,
+        proReview: report.proReview,
+        userToken: authToken,
+      });
+      setNarrative(result);
+    } catch (err) {
+      setNarrativeError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const copyText = async (text: string, setCopied: (v: boolean) => void) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
 
   const copyRepairPrompt = async () => {
     try {
@@ -115,6 +155,84 @@ export function ResultsView({
           </button>
         </div>
         <pre className="repair-prompt">{report.repairPrompt}</pre>
+      </div>
+
+      <div className="card narrator-card">
+        <div className="narrator-header">
+          <div>
+            <h2>Commit message</h2>
+            <p className="hint">AI-generated from this check's spec and results.</p>
+          </div>
+          <span className="narrator-badge">GitNarrator</span>
+        </div>
+
+        {narrativeError && (
+          <p className="narrator-error">{narrativeError}</p>
+        )}
+
+        {narrative ? (
+          <div className="narrator-result">
+            <div className="narrator-section">
+              <div className="narrator-section-header">
+                <span className="narrator-section-label">Commit message</span>
+                <button
+                  type="button"
+                  className="secondary copy-button"
+                  onClick={() => void copyText(narrative.commitMessage, setCopiedCommit)}
+                >
+                  {copiedCommit ? "Copied" : "Copy"}
+                </button>
+              </div>
+              <pre className="narrator-commit">{narrative.commitMessage}</pre>
+            </div>
+            <div className="narrator-section">
+              <div className="narrator-section-header">
+                <span className="narrator-section-label">PR description</span>
+                <button
+                  type="button"
+                  className="secondary copy-button"
+                  onClick={() => void copyText(`# ${narrative.prTitle}\n\n${narrative.prBody}`, setCopiedPr)}
+                >
+                  {copiedPr ? "Copied" : "Copy"}
+                </button>
+              </div>
+              <div className="narrator-pr-title">{narrative.prTitle}</div>
+              <pre className="narrator-commit">{narrative.prBody}</pre>
+            </div>
+            <div className="narrator-actions">
+              <button
+                type="button"
+                className="secondary"
+                disabled={isGenerating}
+                onClick={() => void handleGenerateNarrative()}
+              >
+                {isGenerating ? "Regenerating..." : "Regenerate"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="narrator-empty">
+            {authToken ? (
+              <button
+                type="button"
+                className="primary-purple"
+                disabled={isGenerating}
+                onClick={() => void handleGenerateNarrative()}
+              >
+                {isGenerating ? (
+                  <span className="narrator-generating">
+                    <span className="narrator-spinner" />
+                    Generating…
+                  </span>
+                ) : (
+                  "Generate commit message"
+                )}
+              </button>
+            ) : (
+              <p className="hint">Sign in to generate commit messages and PR descriptions.</p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="results-overview-layout">

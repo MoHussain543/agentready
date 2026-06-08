@@ -33,35 +33,65 @@ export function HelpModal({ onClose }: HelpModalProps) {
 
         <div className="help-modal-pill">How AgentReady works</div>
 
-        <div className="modal-section help-modal-section-card">
+        <div className="modal-section help-modal-section-card help-section-flow">
           <h3>Core flow</h3>
-          <ol className="modal-list">
-            <li>Open a local git repository.</li>
-            <li>Describe what you asked the AI to build.</li>
-            <li>Run a pre-commit check and review the verdict.</li>
+          <ol className="modal-list help-steps-list">
+            <li>
+              <span className="help-step-num">1</span>
+              Open a local git repository.
+            </li>
+            <li>
+              <span className="help-step-num">2</span>
+              Describe what you asked the AI to build.
+            </li>
+            <li>
+              <span className="help-step-num">3</span>
+              Run a pre-commit check and review the verdict.
+            </li>
           </ol>
         </div>
 
-        <div className="modal-section help-modal-section-card">
+        <div className="modal-section help-modal-section-card help-section-checks">
           <h3>What gets checked</h3>
-          <ul className="modal-list">
-            <li><strong>Diff completeness</strong> — are there any uncommitted changes to check at all?</li>
-            <li><strong>Obvious risk checks</strong> — deleted tests, suspicious secrets, dependency/config changes, placeholder content, and other deterministic red flags.</li>
-            <li><strong>Tests</strong> — if you provide a test command, it runs and the result is included in the verdict.</li>
-            <li><strong>Feature alignment</strong> — available in Pro for deeper review of whether the diff matches what you asked the AI to build.</li>
+          <ul className="modal-list help-checks-list">
+            <li>
+              <span className="help-check-dot" style={{ background: "#a78bfa" }} />
+              <span><strong>Diff completeness</strong> — are there any uncommitted changes to check at all?</span>
+            </li>
+            <li>
+              <span className="help-check-dot" style={{ background: "#818cf8" }} />
+              <span><strong>Obvious risk checks</strong> — deleted tests, suspicious secrets, dependency/config changes, placeholder content, and other deterministic red flags.</span>
+            </li>
+            <li>
+              <span className="help-check-dot" style={{ background: "#60a5fa" }} />
+              <span><strong>Tests</strong> — if you provide a test command, it runs and the result is included in the verdict.</span>
+            </li>
+            <li>
+              <span className="help-check-dot" style={{ background: "#c4b5fd" }} />
+              <span><strong>Feature alignment</strong> — available in Pro for deeper review of whether the diff matches what you asked the AI to build.</span>
+            </li>
           </ul>
         </div>
 
-        <div className="modal-section help-modal-section-card">
+        <div className="modal-section help-modal-section-card help-section-verdicts">
           <h3>Verdicts</h3>
-          <ul className="modal-list">
-            <li><strong>No obvious red flags</strong> — free checks did not find obvious risks in the diff.</li>
-            <li><strong>Needs review</strong> — something deserves a closer look before committing.</li>
-            <li><strong>Risk detected</strong> — a blocking issue was found in the diff or tests.</li>
+          <ul className="modal-list help-verdicts-list">
+            <li>
+              <span className="help-verdict-label help-verdict-pass">No obvious red flags</span>
+              — free checks did not find obvious risks in the diff.
+            </li>
+            <li>
+              <span className="help-verdict-label help-verdict-warn">Needs review</span>
+              — something deserves a closer look before committing.
+            </li>
+            <li>
+              <span className="help-verdict-label help-verdict-fail">Risk detected</span>
+              — a blocking issue was found in the diff or tests.
+            </li>
           </ul>
         </div>
 
-        <div className="modal-section help-modal-section-card">
+        <div className="modal-section help-modal-section-card help-section-repair">
           <h3>Repair prompt</h3>
           <p className="modal-body-text">
             Every report includes a repair prompt — a plain-language description of what needs to be fixed, written to be pasted directly into Cursor, Claude, or any AI agent. It describes the specific issue found, not just a restatement of your original request.
