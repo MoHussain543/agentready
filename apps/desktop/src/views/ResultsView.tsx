@@ -21,7 +21,7 @@ export function ResultsView({
   session,
   report,
   isLatestReport,
-  latestReportPath,
+  latestReportPath: _latestReportPath,
   isRunning,
   error,
   authToken,
@@ -123,6 +123,168 @@ export function ResultsView({
     (f) => !report.checks.some((c) => c.id === f.checkId),
   );
 
+  const isReady = report.verdict === "READY_TO_COMMIT";
+
+  const repairPromptSection = (
+    <div className="card">
+      <div className="card-header">
+        <div>
+          <h2>Repair prompt</h2>
+          <p className="hint">Paste this into Cursor or Claude to guide the fix.</p>
+        </div>
+        <button
+          type="button"
+          className="secondary copy-button"
+          onClick={copyRepairPrompt}
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <div className="repair-prompt">{report.repairPrompt}</div>
+    </div>
+  );
+
+  const narratorSection = (
+    <div className="card narrator-card">
+      <div className="narrator-header">
+        <div>
+          <h2>Commit message</h2>
+          <p className="hint">AI-generated from this check's spec and results.</p>
+        </div>
+        <span className="narrator-badge">GitNarrator</span>
+      </div>
+
+      {narrativeError && (
+        <p className="narrator-error">{narrativeError}</p>
+      )}
+
+      {narrative ? (
+        <div className="narrator-result">
+          <div className="narrator-section">
+            <div className="narrator-section-header">
+              <span className="narrator-section-label">Commit message</span>
+              <button
+                type="button"
+                className="secondary copy-button"
+                onClick={() => void copyText(narrative.commitMessage, setCopiedCommit)}
+              >
+                {copiedCommit ? "Copied" : "Copy"}
+              </button>
+            </div>
+            <pre className="narrator-commit">{narrative.commitMessage}</pre>
+          </div>
+          <div className="narrator-section">
+            <div className="narrator-section-header">
+              <span className="narrator-section-label">PR description</span>
+              <button
+                type="button"
+                className="secondary copy-button"
+                onClick={() => void copyText(`# ${narrative.prTitle}\n\n${narrative.prBody}`, setCopiedPr)}
+              >
+                {copiedPr ? "Copied" : "Copy"}
+              </button>
+            </div>
+            <div className="narrator-pr-title">{narrative.prTitle}</div>
+            <pre className="narrator-commit">{narrative.prBody}</pre>
+          </div>
+          {commitError && (
+            <p className="narrator-error">{commitError}</p>
+          )}
+
+          {commitStage === "confirming" && (
+            <div className="narrator-confirm">
+              <p className="narrator-confirm-label">
+                Commit {stagedFiles.length} staged {stagedFiles.length === 1 ? "file" : "files"}:
+              </p>
+              <ul className="narrator-staged-list">
+                {stagedFiles.slice(0, 6).map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+                {stagedFiles.length > 6 && (
+                  <li className="narrator-staged-more">+{stagedFiles.length - 6} more</li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {commitStage === "done" && commitResult && (
+            <p className="narrator-commit-success">{commitResult}</p>
+          )}
+
+          <div className="narrator-actions">
+            {commitStage === "idle" && (
+              <button
+                type="button"
+                className="primary-purple"
+                disabled={isCommitting || isGenerating}
+                onClick={() => void handleCommitClick()}
+              >
+                {isCommitting ? "Checking…" : "Commit"}
+              </button>
+            )}
+            {commitStage === "confirming" && (
+              <>
+                <button
+                  type="button"
+                  className="primary-purple"
+                  disabled={isCommitting || stagedFiles.length === 0}
+                  onClick={() => void handleCommitConfirm()}
+                >
+                  {isCommitting ? "Committing…" : "Confirm commit"}
+                </button>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={isCommitting}
+                  onClick={() => { setCommitStage("idle"); setCommitError(null); }}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+            {commitStage !== "done" && (
+              <button
+                type="button"
+                className="secondary"
+                disabled={isCommitting || isGenerating}
+                onClick={() => {
+                  setCommitStage("idle");
+                  setCommitResult(null);
+                  setCommitError(null);
+                  void handleGenerateNarrative();
+                }}
+              >
+                {isGenerating ? "Regenerating…" : "Regenerate"}
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="narrator-empty">
+          {authToken ? (
+            <button
+              type="button"
+              className="primary-purple"
+              disabled={isGenerating}
+              onClick={() => void handleGenerateNarrative()}
+            >
+              {isGenerating ? (
+                <span className="narrator-generating">
+                  <span className="narrator-spinner" />
+                  Generating…
+                </span>
+              ) : (
+                "Generate commit message"
+              )}
+            </button>
+          ) : (
+            <p className="hint">Sign in to generate commit messages and PR descriptions.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <section className="view view-wide results-view">
       <div className={`verdict-hero verdict-hero-${report.verdict.toLowerCase()}`}>
@@ -132,53 +294,33 @@ export function ResultsView({
         {report.verdictExplanation && (
           <p className="verdict-hero-explanation">{report.verdictExplanation}</p>
         )}
+        <div className="verdict-hero-stats">
+          <span>{report.diffSummary.totalFiles} file{report.diffSummary.totalFiles === 1 ? "" : "s"} changed</span>
+          {report.summary.warn > 0 && (
+            <span className="verdict-hero-stat-warn">{report.summary.warn} warning{report.summary.warn === 1 ? "" : "s"}</span>
+          )}
+          {report.summary.fail > 0 && (
+            <span className="verdict-hero-stat-fail">{report.summary.fail} failure{report.summary.fail === 1 ? "" : "s"}</span>
+          )}
+          {report.summary.warn === 0 && report.summary.fail === 0 && (
+            <span className="verdict-hero-stat-clean">All checks passed</span>
+          )}
+        </div>
       </div>
 
       <header className="view-header view-header-compact">
         <p className="meta">
-          Generated {new Date(report.generatedAt).toLocaleString()} ·{" "}
-          {report.checkSuite}
+          Generated {new Date(report.generatedAt).toLocaleString()}
+          {report.git ? ` · ${report.git.branch}@${(report.git.baseCommit ?? "").slice(0, 7)}` : ""}
+          {" · "}{report.checkSuite}
           {typeof report.durationMs === "number" ? ` · ${report.durationMs}ms` : ""}
           {" · "}engine {report.engineVersion}
+          {report.git?.isDirty ? " · dirty working tree" : ""}
         </p>
         {!isLatestReport && (
-          <p className="archived-note">
-            Archived report — not the latest saved check.
-          </p>
+          <p className="archived-note">Archived report — not the latest saved check.</p>
         )}
-        {isLatestReport && latestReportPath && (
-          <p className="saved-note">
-            Saved locally to <code>{latestReportPath}</code>
-          </p>
-        )}
-        {report.git && (
-          <p className="git-context-line">
-            Git context: <code>{report.git.branch}</code> @{" "}
-            <code>{report.git.baseCommit}</code>
-            {report.git.isDirty ? " · working tree has uncommitted changes" : ""}
-          </p>
-        )}
-        <p className="hint">
-          Free checks scan for obvious risks in this diff. Feature alignment review is available in Pro.
-        </p>
       </header>
-
-      <div className="inspection-summary-strip">
-        <div className="summary-grid">
-          <div className="summary-stat summary-stat-files">
-            <span className="summary-label">Files changed</span>
-            <strong>{report.diffSummary.totalFiles}</strong>
-          </div>
-          <div className="summary-stat summary-stat-warn">
-            <span className="summary-label">Warnings</span>
-            <strong>{report.summary.warn}</strong>
-          </div>
-          <div className="summary-stat summary-stat-fail">
-            <span className="summary-label">Failures</span>
-            <strong>{report.summary.fail}</strong>
-          </div>
-        </div>
-      </div>
 
       {error && (
         <div className="error-banner" role="alert">
@@ -187,23 +329,7 @@ export function ResultsView({
         </div>
       )}
 
-      <div className="results-overview-layout">
-        <div className="card">
-          <h2>What you asked the AI to build</h2>
-          <p className="request-copy">{session.description}</p>
-        </div>
-
-        <div className="card">
-          <h2>Diff summary</h2>
-          <DiffList label="Added" paths={report.diffSummary.added} />
-          <DiffList label="Modified" paths={report.diffSummary.modified} />
-          <DiffList label="Deleted" paths={report.diffSummary.deleted} />
-          <p className="stat-line">
-            {report.diffSummary.totalFiles} files ·{" "}
-            <strong>{report.diffSummary.totalChangedLines}</strong> changed lines
-          </p>
-        </div>
-      </div>
+      {isReady ? narratorSection : repairPromptSection}
 
       <div className="card">
         <h2>Checks</h2>
@@ -344,160 +470,17 @@ export function ResultsView({
       )}
 
       <div className="card">
-        <div className="card-header">
-          <div>
-            <h2>Repair prompt</h2>
-            <p className="hint">Paste this into Cursor or Claude to guide the fix.</p>
-          </div>
-          <button
-            type="button"
-            className="secondary copy-button"
-            onClick={copyRepairPrompt}
-          >
-            {copied ? "Copied" : "Copy"}
-          </button>
-        </div>
-        <div className="repair-prompt">{report.repairPrompt}</div>
+        <h2>Diff summary</h2>
+        <DiffList label="Added" paths={report.diffSummary.added} />
+        <DiffList label="Modified" paths={report.diffSummary.modified} />
+        <DiffList label="Deleted" paths={report.diffSummary.deleted} />
+        <p className="stat-line">
+          {report.diffSummary.totalFiles} files ·{" "}
+          <strong>{report.diffSummary.totalChangedLines}</strong> changed lines
+        </p>
       </div>
 
-      <div className="card narrator-card">
-        <div className="narrator-header">
-          <div>
-            <h2>Commit message</h2>
-            <p className="hint">AI-generated from this check's spec and results.</p>
-          </div>
-          <span className="narrator-badge">GitNarrator</span>
-        </div>
-
-        {narrativeError && (
-          <p className="narrator-error">{narrativeError}</p>
-        )}
-
-        {narrative ? (
-          <div className="narrator-result">
-            <div className="narrator-section">
-              <div className="narrator-section-header">
-                <span className="narrator-section-label">Commit message</span>
-                <button
-                  type="button"
-                  className="secondary copy-button"
-                  onClick={() => void copyText(narrative.commitMessage, setCopiedCommit)}
-                >
-                  {copiedCommit ? "Copied" : "Copy"}
-                </button>
-              </div>
-              <pre className="narrator-commit">{narrative.commitMessage}</pre>
-            </div>
-            <div className="narrator-section">
-              <div className="narrator-section-header">
-                <span className="narrator-section-label">PR description</span>
-                <button
-                  type="button"
-                  className="secondary copy-button"
-                  onClick={() => void copyText(`# ${narrative.prTitle}\n\n${narrative.prBody}`, setCopiedPr)}
-                >
-                  {copiedPr ? "Copied" : "Copy"}
-                </button>
-              </div>
-              <div className="narrator-pr-title">{narrative.prTitle}</div>
-              <pre className="narrator-commit">{narrative.prBody}</pre>
-            </div>
-            {commitError && (
-              <p className="narrator-error">{commitError}</p>
-            )}
-
-            {commitStage === "confirming" && (
-              <div className="narrator-confirm">
-                <p className="narrator-confirm-label">
-                  Commit {stagedFiles.length} staged {stagedFiles.length === 1 ? "file" : "files"}:
-                </p>
-                <ul className="narrator-staged-list">
-                  {stagedFiles.slice(0, 6).map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
-                  {stagedFiles.length > 6 && (
-                    <li className="narrator-staged-more">+{stagedFiles.length - 6} more</li>
-                  )}
-                </ul>
-              </div>
-            )}
-
-            {commitStage === "done" && commitResult && (
-              <p className="narrator-commit-success">{commitResult}</p>
-            )}
-
-            <div className="narrator-actions">
-              {commitStage === "idle" && (
-                <button
-                  type="button"
-                  className="primary-purple"
-                  disabled={isCommitting || isGenerating}
-                  onClick={() => void handleCommitClick()}
-                >
-                  {isCommitting ? "Checking…" : "Commit"}
-                </button>
-              )}
-              {commitStage === "confirming" && (
-                <>
-                  <button
-                    type="button"
-                    className="primary-purple"
-                    disabled={isCommitting || stagedFiles.length === 0}
-                    onClick={() => void handleCommitConfirm()}
-                  >
-                    {isCommitting ? "Committing…" : `Confirm commit`}
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary"
-                    disabled={isCommitting}
-                    onClick={() => { setCommitStage("idle"); setCommitError(null); }}
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
-              {commitStage !== "done" && (
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={isCommitting || isGenerating}
-                  onClick={() => {
-                    setCommitStage("idle");
-                    setCommitResult(null);
-                    setCommitError(null);
-                    void handleGenerateNarrative();
-                  }}
-                >
-                  {isGenerating ? "Regenerating…" : "Regenerate"}
-                </button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="narrator-empty">
-            {authToken ? (
-              <button
-                type="button"
-                className="primary-purple"
-                disabled={isGenerating}
-                onClick={() => void handleGenerateNarrative()}
-              >
-                {isGenerating ? (
-                  <span className="narrator-generating">
-                    <span className="narrator-spinner" />
-                    Generating…
-                  </span>
-                ) : (
-                  "Generate commit message"
-                )}
-              </button>
-            ) : (
-              <p className="hint">Sign in to generate commit messages and PR descriptions.</p>
-            )}
-          </div>
-        )}
-      </div>
+      {isReady ? repairPromptSection : narratorSection}
 
       <div className="actions">
         <button
