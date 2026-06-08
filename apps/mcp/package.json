@@ -1,0 +1,23 @@
+{
+  "name": "agentready-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for AgentReady — run pre-commit readiness checks from inside your AI coding assistant",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "bin": {
+    "agentready-mcp": "./dist/index.js"
+  },
+  "files": ["dist", "bin"],
+  "scripts": {
+    "build": "node scripts/bake-constants.mjs && tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

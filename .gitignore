@@ -10,6 +10,9 @@ replay_pid*
 node_modules/
 dist/
 
+# MCP build-time generated file — may contain baked token
+apps/mcp/src/constants.ts
+
 # Tauri
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
