@@ -73,6 +73,20 @@ class RepairPromptBuilderTest {
     }
 
     @Test
+    void warningOnlyPromptUsesReviewLanguage() {
+        List<Finding> findings = List.of(
+                new Finding("feature-alignment-drift", FindingSeverity.warn,
+                        "1 changed production file(s) may be unrelated to the requested feature",
+                        List.of("src/SettingsModal.tsx")));
+
+        String prompt = RepairPromptBuilder.build(
+                spec("Open saved reports from recent projects"), Verdict.NEEDS_REVIEW, findings, notRun());
+
+        assertTrue(prompt.contains("Review these issues:"));
+        assertFalse(prompt.contains("Fix these issues:"));
+    }
+
+    @Test
     void readyAndCleanPromptIsMinimal() {
         String prompt = RepairPromptBuilder.build(
                 spec("Add caching"), Verdict.READY_TO_COMMIT, List.of(), notRun());

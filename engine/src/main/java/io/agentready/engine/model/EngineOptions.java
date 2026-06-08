@@ -7,4 +7,5 @@ public record EngineOptions(
         Boolean includeStaged,
         Boolean includeUnstaged,
         Boolean runTests,
-        String testCommand) {}
+        String testCommand,
+        String testCommandCwd) {}

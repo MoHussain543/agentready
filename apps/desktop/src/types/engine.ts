@@ -29,6 +29,7 @@ export interface EngineOptions {
   includeUnstaged?: boolean;
   runTests?: boolean;
   testCommand?: string;
+  testCommandCwd?: string;
 }
 
 export interface EngineRequest {

@@ -19,6 +19,7 @@ const BASE_OPTIONS: EngineRequest["options"] = {
 export interface TestExecutionOptions {
   runTests?: boolean;
   testCommand?: string | null;
+  testCommandCwd?: string | null;
 }
 
 export function buildEngineRequest(
@@ -36,6 +37,7 @@ export function buildEngineRequest(
       ...BASE_OPTIONS,
       runTests: testOptions?.runTests ?? false,
       testCommand: testOptions?.testCommand?.trim() || undefined,
+      testCommandCwd: testOptions?.testCommandCwd?.trim() || undefined,
     },
   };
 }

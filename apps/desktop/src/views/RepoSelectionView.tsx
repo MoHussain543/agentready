@@ -47,7 +47,7 @@ export function RepoSelectionView({
       <header className="view-header">
         <p className="eyebrow">Local verifier</p>
         <h1>AgentReady</h1>
-        <p className="subtitle">Verify AI-generated code before you commit.</p>
+        <p className="subtitle">Catch obvious risks before you commit.</p>
       </header>
 
       {error && (
@@ -92,12 +92,12 @@ export function RepoSelectionView({
       <div className="card info-card">
         <h2>How it works</h2>
         <ul className="info-list">
-          <li>Checks your current uncommitted git diff before you commit</li>
-          <li>Compares changes against the original request you gave the AI</li>
+          <li>Scans your current uncommitted git diff for obvious risks before you commit</li>
+          <li>Flags things like deleted tests, failing tests, secrets, placeholder content, and dependency/config changes</li>
           <li>Optionally runs a local test command you configure</li>
         </ul>
         <p className="hint">
-          Local-first. No signup, no auto-commit, no cloud dependency.
+          Local-first. No signup, no auto-commit, no cloud dependency. Feature alignment review is available in Pro.
         </p>
       </div>
     </section>

@@ -73,7 +73,7 @@ public final class FeatureAlignmentDriftRule implements Rule {
             return RuleResult.pass("Changed production files broadly align with the feature request", List.of());
         }
         return RuleResult.warn(
-                evidence.size() + " changed production file(s) look weakly related to the feature request",
+                evidence.size() + " changed production file(s) may be unrelated to the requested feature",
                 "Remove unrelated edits or update the feature description if the broader scope is intentional.",
                 evidence);
     }

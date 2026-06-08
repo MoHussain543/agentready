@@ -40,7 +40,7 @@ export function ResultsView({
     <section className="view view-wide results-view">
       <div className={`verdict-hero verdict-hero-${report.verdict.toLowerCase()}`}>
         <p className="eyebrow verdict-hero-repo">{repoPath}</p>
-        <span className="verdict-hero-label">{report.verdict.replaceAll("_", " ")}</span>
+        <span className="verdict-hero-label">{verdictLabel(report.verdict)}</span>
         <h1 className="verdict-hero-title">{session.title}</h1>
         {report.verdictExplanation && (
           <p className="verdict-hero-explanation">{report.verdictExplanation}</p>
@@ -71,6 +71,9 @@ export function ResultsView({
             {report.git.isDirty ? " · working tree has uncommitted changes" : ""}
           </p>
         )}
+        <p className="hint">
+          Free checks scan for obvious risks in this diff. Feature alignment review is available in Pro.
+        </p>
       </header>
 
       <div className="inspection-summary-strip">
@@ -198,6 +201,17 @@ export function ResultsView({
       </div>
     </section>
   );
+}
+
+function verdictLabel(verdict: ReadinessReport["verdict"]): string {
+  switch (verdict) {
+    case "READY_TO_COMMIT":
+      return "No obvious red flags";
+    case "NOT_READY":
+      return "Risk detected";
+    case "NEEDS_REVIEW":
+      return "Needs review";
+  }
 }
 
 function TestResultDetail({ testResult }: { testResult: TestResult }) {

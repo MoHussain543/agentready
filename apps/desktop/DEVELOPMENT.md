@@ -93,7 +93,7 @@ Tauri commands:
 - `init_repo_storage(repoPath)` — creates `.agentready/` if missing, seeds/loads `session.json`, returns `{ session, featureSpec, latestReport }`.
 - `save_feature_session(repoPath, featureSpec)` — writes `feature-spec.json` and updates session pointers.
 - `load_repo_session(repoPath)` — returns `{ session, featureSpec, latestReport }` or `null` if not initialized.
-- `set_test_command(repoPath, command)` — persists (or clears) the repo-local test command.
+- `set_test_command(repoPath, command, cwd)` — persists (or clears) the repo-local test command and optional repo-relative working directory.
 - `save_report(repoPath, report)` — writes a timestamped report + `latest-report.json` and updates session pointers (`lastReadinessRunAt`, `latestReportVerdict`, `latestReportPath`, `reportHistoryCount`).
 - `load_latest_report(repoPath)` — returns the latest saved `ReadinessReport` or `null`.
 - `list_reports(repoPath)` — returns saved report history entries (newest first).

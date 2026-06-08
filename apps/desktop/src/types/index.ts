@@ -103,5 +103,6 @@ export interface AppState {
   isLatestReport: boolean;
   history: import("../lib/storage").ReportHistoryEntry[];
   testCommand: string;
+  testCommandCwd: string;
   runTests: boolean;
 }

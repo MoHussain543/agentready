@@ -44,6 +44,13 @@ public final class PlaceholderContentRule implements Rule {
         if (evidence.isEmpty()) {
             return RuleResult.pass("No obvious placeholder or unfinished content in added production lines", List.of());
         }
+        if (evidence.size() == 1) {
+            Evidence hit = evidence.get(0);
+            return RuleResult.warn(
+                    "Placeholder-style or unfinished content found: " + hit.detail(),
+                    "Replace placeholder copy or comments before committing.",
+                    evidence);
+        }
         return RuleResult.warn(
                 evidence.size() + " file(s) contain placeholder-style or unfinished content",
                 "Replace placeholder copy or comments before committing.",

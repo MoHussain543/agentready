@@ -108,13 +108,13 @@ class ReadinessRunnerTest {
     }
 
     private static EngineOptions runTestsOptions(String command) {
-        return new EngineOptions(null, null, null, null, null, true, command);
+        return new EngineOptions(null, null, null, null, null, true, command, null);
     }
 
     private static TestRunner fixedRunner(TestResult result) {
         return new TestRunner() {
             @Override
-            public TestResult run(Path repo, String command) {
+            public TestResult run(Path repo, String command, String commandCwd) {
                 return result;
             }
         };
@@ -259,7 +259,7 @@ class ReadinessRunnerTest {
                 new ChangedFile("a.java", ChangeType.MODIFIED),
                 new ChangedFile("b.java", ChangeType.MODIFIED),
                 new ChangedFile("AppTest.java", ChangeType.ADDED));
-        EngineOptions options = new EngineOptions("free-v1-precommit", 1, 1, true, true, false, null);
+        EngineOptions options = new EngineOptions("free-v1-precommit", 1, 1, true, true, false, null, null);
 
         ReadinessReport report =
                 new ReadinessRunner(git).handle(request("/tmp/repo", options)).report();
@@ -725,7 +725,7 @@ class ReadinessRunnerTest {
 
         assertEquals(Verdict.READY_TO_COMMIT, report.verdict());
         assertEquals(
-                "The current diff passed the baseline readiness checks.",
+                "No obvious red flags were found in this diff.",
                 report.verdictExplanation());
     }
 
@@ -753,7 +753,7 @@ class ReadinessRunnerTest {
 
         assertEquals(Verdict.NOT_READY, report.verdict());
         assertEquals(
-                "Blocking issues were found in the current diff.", report.verdictExplanation());
+                "A blocking issue or failing test was found in the current diff.", report.verdictExplanation());
     }
 
     @Test
@@ -769,7 +769,7 @@ class ReadinessRunnerTest {
         String prompt = report.repairPrompt();
         assertTrue(prompt.contains("A test feature description"));
         assertTrue(prompt.contains("AgentReady verdict: NEEDS_REVIEW"));
-        assertTrue(prompt.contains("Fix these issues:"));
+        assertTrue(prompt.contains("Review these issues:"));
         assertTrue(prompt.contains("Do not change unrelated files"));
     }
 

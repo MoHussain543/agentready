@@ -17,6 +17,7 @@ export interface CurrentSession {
   reportHistoryCount?: number | null;
   appVersion?: string | null;
   testCommand?: string | null;
+  testCommandCwd?: string | null;
 }
 
 export interface RepoSessionState {
@@ -75,11 +76,13 @@ export async function loadRepoSession(
 export async function setTestCommand(
   repoPath: string,
   command: string | null,
+  cwd: string | null,
 ): Promise<CurrentSession> {
   try {
     return await invoke<CurrentSession>("set_test_command", {
       repoPath: repoPath.trim(),
       command: command && command.trim().length > 0 ? command.trim() : null,
+      cwd: cwd && cwd.trim().length > 0 ? cwd.trim() : null,
     });
   } catch (error) {
     throw new Error(formatError(error, "Failed to save the test command."));

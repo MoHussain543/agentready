@@ -7,6 +7,7 @@ interface StartSessionViewProps {
   repoPath: string;
   session: FeatureSessionInput;
   testCommand: string;
+  testCommandCwd: string;
   runTests: boolean;
   latestSession: CurrentSession | null;
   hasLatestReport: boolean;
@@ -14,6 +15,7 @@ interface StartSessionViewProps {
   error: string | null;
   onSessionChange: (session: FeatureSessionInput) => void;
   onTestCommandChange: (testCommand: string) => void;
+  onTestCommandCwdChange: (testCommandCwd: string) => void;
   onRunTestsChange: (runTests: boolean) => void;
   onViewLatest: () => void;
   onBack: () => void;
@@ -24,6 +26,7 @@ export function StartSessionView({
   repoPath,
   session,
   testCommand,
+  testCommandCwd,
   runTests,
   latestSession,
   hasLatestReport,
@@ -31,6 +34,7 @@ export function StartSessionView({
   error,
   onSessionChange,
   onTestCommandChange,
+  onTestCommandCwdChange,
   onRunTestsChange,
   onViewLatest,
   onBack,
@@ -46,6 +50,10 @@ export function StartSessionView({
     !isRunning;
 
   const testCommandMissing = runTests && testCommand.trim().length === 0;
+  const normalizedTestCwd = testCommandCwd.trim().replace(/^\.\/+/, "");
+  const resolvedTestCwd = normalizedTestCwd.length > 0
+    ? `${repoPath}/${normalizedTestCwd}`
+    : repoPath;
 
   if (isRunning) {
     return <RunningOverlay />;
@@ -162,7 +170,22 @@ export function StartSessionView({
             onChange={(e) => onTestCommandChange(e.target.value)}
           />
         </label>
-        <p className="hint">Saved per repository. Leave blank to skip test execution.</p>
+        <label className="field">
+          <span>Test working directory</span>
+          <input
+            type="text"
+            value={testCommandCwd}
+            placeholder="apps/desktop"
+            disabled={isRunning}
+            onChange={(e) => onTestCommandCwdChange(e.target.value)}
+          />
+        </label>
+        <p className="hint">
+          Saved per repository. Leave the command blank to skip test execution. Leave the directory blank to run from the repo root.
+        </p>
+        <p className="hint">
+          Tests will run from <code>{resolvedTestCwd}</code>.
+        </p>
 
         {testCommandMissing && (
           <p className="inline-warning" role="alert">

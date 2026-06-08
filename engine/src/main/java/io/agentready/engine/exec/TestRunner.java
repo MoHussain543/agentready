@@ -35,9 +35,21 @@ public class TestRunner {
     }
 
     public TestResult run(Path repo, String command) {
+        return run(repo, command, null);
+    }
+
+    public TestResult run(Path repo, String command, String commandCwd) {
         long start = System.nanoTime();
+        Path workingDirectory;
+        try {
+            workingDirectory = resolveWorkingDirectory(repo, commandCwd);
+        } catch (IllegalArgumentException e) {
+            return new TestResult(false, TestResultStatus.error, command, null, elapsedMs(start),
+                    null, null, e.getMessage());
+        }
+
         ProcessBuilder builder = new ProcessBuilder(shellCommand(command));
-        builder.directory(repo.toFile());
+        builder.directory(workingDirectory.toFile());
         builder.redirectErrorStream(true);
 
         Process process;
@@ -81,6 +93,30 @@ public class TestRunner {
                 : "Tests failed with exit code " + exitCode;
         return new TestResult(true, status, command, exitCode, elapsedMs(start),
                 snippet(output), null, message);
+    }
+
+    private static Path resolveWorkingDirectory(Path repo, String commandCwd) {
+        if (commandCwd == null || commandCwd.isBlank() || ".".equals(commandCwd.trim())) {
+            return repo;
+        }
+
+        Path relative = Path.of(commandCwd.trim()).normalize();
+        if (relative.isAbsolute() || relative.startsWith("..")) {
+            throw new IllegalArgumentException(
+                    "Test working directory must stay inside the selected repository");
+        }
+
+        Path resolved = repo.resolve(relative).normalize();
+        if (!resolved.startsWith(repo.normalize())) {
+            throw new IllegalArgumentException(
+                    "Test working directory must stay inside the selected repository");
+        }
+        if (!resolved.toFile().exists() || !resolved.toFile().isDirectory()) {
+            throw new IllegalArgumentException(
+                    "Test working directory does not exist inside the selected repository: "
+                            + commandCwd.trim());
+        }
+        return resolved;
     }
 
     private static Thread startOutputReader(Process process, StringBuilder output) {

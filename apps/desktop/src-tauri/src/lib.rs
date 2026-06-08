@@ -34,8 +34,9 @@ fn load_repo_session(repo_path: String) -> Result<Option<RepoSessionState>, Stri
 fn set_test_command(
     repo_path: String,
     command: Option<String>,
+    cwd: Option<String>,
 ) -> Result<CurrentSession, String> {
-    storage::set_test_command(&repo_path, command)
+    storage::set_test_command(&repo_path, command, cwd)
 }
 
 #[tauri::command]

@@ -65,6 +65,7 @@ function App() {
     isLatestReport: false,
     history: [],
     testCommand: "",
+    testCommandCwd: "",
     runTests: false,
   });
   const [recentProjects, setRecentProjects] = useState<RecentProjectEntry[]>(
@@ -146,6 +147,7 @@ function App() {
         isLatestReport: repoState.latestReport !== null,
         history,
         testCommand: repoState.session.testCommand ?? "",
+        testCommandCwd: repoState.session.testCommandCwd ?? "",
       }));
       rememberRepo(trimmedRepoPath, repoState.session);
     } catch (initError) {
@@ -174,12 +176,17 @@ function App() {
     const trimmedRepoPath = state.repoPath.trim();
     const featureSpec = buildFeatureSpec(state.session, state.featureSpec);
     const trimmedTestCommand = state.testCommand.trim();
+    const trimmedTestCommandCwd = state.testCommandCwd.trim();
     setIsRunning(true);
     setError(null);
 
     try {
       const repoState = await saveFeatureSession(trimmedRepoPath, featureSpec);
-      await setTestCommand(trimmedRepoPath, trimmedTestCommand || null);
+      await setTestCommand(
+        trimmedRepoPath,
+        trimmedTestCommand || null,
+        trimmedTestCommandCwd || null,
+      );
 
       const report = await runReadinessCheck(
         trimmedRepoPath,
@@ -188,6 +195,7 @@ function App() {
         {
           runTests: state.runTests,
           testCommand: trimmedTestCommand || null,
+          testCommandCwd: trimmedTestCommandCwd || null,
         },
       );
 
@@ -268,6 +276,7 @@ function App() {
         isLatestReport: repoState.session.latestReportPath === entry.path,
         history,
         testCommand: repoState.session.testCommand ?? "",
+        testCommandCwd: repoState.session.testCommandCwd ?? "",
       }));
       rememberRepo(project.repoPath, repoState.session);
     } catch (loadError) {
@@ -371,6 +380,7 @@ function App() {
           repoPath={state.repoPath}
           session={state.session}
           testCommand={state.testCommand}
+          testCommandCwd={state.testCommandCwd}
           runTests={state.runTests}
           latestSession={state.currentSession}
           hasLatestReport={state.report !== null}
@@ -381,6 +391,9 @@ function App() {
           }
           onTestCommandChange={(testCommand) =>
             setState((current) => ({ ...current, testCommand }))
+          }
+          onTestCommandCwdChange={(testCommandCwd) =>
+            setState((current) => ({ ...current, testCommandCwd }))
           }
           onRunTestsChange={(runTests) =>
             setState((current) => ({ ...current, runTests }))

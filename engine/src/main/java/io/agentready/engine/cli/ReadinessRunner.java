@@ -228,7 +228,7 @@ public final class ReadinessRunner implements EngineHandler {
             return new TestResult(false, TestResultStatus.warn, null, null, null, null, null,
                     "Tests were requested but no test command is configured for this repo");
         }
-        return testRunner.run(repo, command);
+        return testRunner.run(repo, command, options.testCommandCwd());
     }
 
     private static CheckResult toTestCheck(TestResult testResult) {

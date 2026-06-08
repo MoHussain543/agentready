@@ -54,7 +54,7 @@ export function HomeView({
             className="home-logo"
           />
           <h1>AgentReady</h1>
-          <p className="subtitle">Verify before you commit.</p>
+          <p className="subtitle">Catch obvious risks before you commit.</p>
         </header>
 
         {error && (
@@ -94,6 +94,10 @@ export function HomeView({
             </span>
           </button>
         </div>
+
+        <p className="hint">
+          Free checks focus on obvious risks in the diff. Feature alignment review is available in Pro.
+        </p>
       </div>
 
       {recentProjects.length > 0 && (

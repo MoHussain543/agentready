@@ -53,7 +53,7 @@ public final class RepairPromptBuilder {
         builder.append(VerdictPolicy.explain(verdict)).append("\n");
 
         if (!issues.isEmpty()) {
-            builder.append("\nFix these issues:\n");
+            builder.append("\n").append(issuesHeading(issues)).append(":\n");
             for (Finding finding : issues) {
                 builder.append("- ").append(finding.message());
                 if (finding.paths() != null && !finding.paths().isEmpty()) {
@@ -78,6 +78,11 @@ public final class RepairPromptBuilder {
             builder.append("- Re-run the test command and make sure it passes\n");
         }
         return builder.toString().strip();
+    }
+
+    private static String issuesHeading(List<Finding> issues) {
+        boolean anyFail = issues.stream().anyMatch(finding -> finding.severity() == io.agentready.engine.model.FindingSeverity.fail);
+        return anyFail ? "Fix these issues" : "Review these issues";
     }
 
     private static String featureDescription(FeatureSpec spec) {

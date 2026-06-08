@@ -1,8 +1,8 @@
 import type { Verdict } from "../types";
 
 const LABELS: Record<Verdict, string> = {
-  READY_TO_COMMIT: "Ready to commit",
-  NOT_READY: "Not ready",
+  READY_TO_COMMIT: "No obvious red flags",
+  NOT_READY: "Risk detected",
   NEEDS_REVIEW: "Needs review",
 };
 

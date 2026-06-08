@@ -61,6 +61,10 @@
       "type": ["string", "null"],
       "description": "Repo-local shell command used for optional test execution; null if unset."
     },
+    "testCommandCwd": {
+      "type": ["string", "null"],
+      "description": "Optional repo-relative working directory used when running the saved test command; null means run from the repo root."
+    },
     "reportHistoryCount": {
       "type": "integer",
       "minimum": 0,

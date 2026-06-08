@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -52,6 +53,26 @@ class TestRunnerTest {
     @Test
     void unrunnableCommandReportsErrorWithoutClaimingTestsRan(@TempDir Path dir) {
         TestResult result = new TestRunner(30).run(dir, "command_that_does_not_exist_12345");
+
+        assertEquals(TestResultStatus.error, result.status());
+        assertFalse(result.ran());
+        assertNotNull(result.message());
+    }
+
+    @Test
+    void commandCanRunFromConfiguredSubdirectory(@TempDir Path dir) throws Exception {
+        Files.createDirectories(dir.resolve("apps/desktop"));
+
+        TestResult result = new TestRunner(30).run(dir, "pwd", "apps/desktop");
+
+        assertEquals(TestResultStatus.pass, result.status());
+        assertNotNull(result.stdoutSnippet());
+        assertTrue(result.stdoutSnippet().contains("apps/desktop"));
+    }
+
+    @Test
+    void invalidWorkingDirectoryReportsError(@TempDir Path dir) {
+        TestResult result = new TestRunner(30).run(dir, "pwd", "../outside");
 
         assertEquals(TestResultStatus.error, result.status());
         assertFalse(result.ran());

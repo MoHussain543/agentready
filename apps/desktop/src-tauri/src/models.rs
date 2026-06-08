@@ -34,6 +34,7 @@ pub struct EngineOptions {
     pub include_unstaged: Option<bool>,
     pub run_tests: Option<bool>,
     pub test_command: Option<String>,
+    pub test_command_cwd: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -35,10 +35,10 @@ public final class VerdictPolicy {
     /** Short, deterministic one-line explanation of a verdict for display. */
     public static String explain(Verdict verdict) {
         return switch (verdict) {
-            case NOT_READY -> "Blocking issues were found in the current diff.";
+            case NOT_READY -> "A blocking issue or failing test was found in the current diff.";
             case NEEDS_REVIEW ->
                     "No blocking issues were found, but some changes need review.";
-            case READY_TO_COMMIT -> "The current diff passed the baseline readiness checks.";
+            case READY_TO_COMMIT -> "No obvious red flags were found in this diff.";
         };
     }
 }

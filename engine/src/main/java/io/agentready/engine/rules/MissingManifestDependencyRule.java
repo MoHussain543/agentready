@@ -77,19 +77,23 @@ public final class MissingManifestDependencyRule implements Rule {
             }
 
             if (!missing.isEmpty()) {
-                evidence.add(new Evidence(
-                        EvidenceKind.file,
-                        file.path(),
-                        "undeclared import: " + String.join(", ", missing)));
+                evidence.add(new Evidence(EvidenceKind.file, file.path(), String.join(", ", missing)));
             }
         }
 
         if (evidence.isEmpty()) {
             return RuleResult.pass("No added imports appear to require undeclared packages", List.of());
         }
+        if (evidence.size() == 1) {
+            Evidence hit = evidence.get(0);
+            return RuleResult.warn(
+                    "Added import appears to require an undeclared package: " + hit.detail(),
+                    "Add the missing dependency to the nearest package.json or remove the undeclared import before committing.",
+                    evidence);
+        }
         return RuleResult.warn(
                 evidence.size() + " file(s) import package(s) missing from the nearest package manifest",
-                "Add the missing dependency to package.json or remove the undeclared import before committing.",
+                "Add the missing dependencies to the nearest package.json or remove the undeclared imports before committing.",
                 evidence);
     }
 

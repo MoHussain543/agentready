@@ -203,6 +203,7 @@ mod tests {
                 include_unstaged: Some(true),
                 run_tests: Some(false),
                 test_command: None,
+                test_command_cwd: None,
             }),
         };
 

@@ -33,6 +33,7 @@ pub struct CurrentSession {
     pub report_history_count: i64,
     pub app_version: Option<String>,
     pub test_command: Option<String>,
+    pub test_command_cwd: Option<String>,
 }
 
 impl Default for CurrentSession {
@@ -51,6 +52,7 @@ impl Default for CurrentSession {
             report_history_count: 0,
             app_version: None,
             test_command: None,
+            test_command_cwd: None,
         }
     }
 }
@@ -130,6 +132,7 @@ pub fn load(repo_path: &str) -> Result<Option<RepoSessionState>, String> {
 pub fn set_test_command(
     repo_path: &str,
     command: Option<String>,
+    cwd: Option<String>,
 ) -> Result<CurrentSession, String> {
     let repo = validated_repo(repo_path)?;
     ensure_dirs(&repo)?;
@@ -137,9 +140,11 @@ pub fn set_test_command(
     let normalized = command
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty());
+    let normalized_cwd = normalize_test_command_cwd(cwd)?;
 
     let mut session = load_or_create_session(&repo)?;
     session.test_command = normalized;
+    session.test_command_cwd = normalized_cwd;
     session.last_accessed_at = now();
     write_json(&session_path(&repo), &session)?;
 
@@ -358,6 +363,30 @@ fn validated_repo(repo_path: &str) -> Result<PathBuf, String> {
         ));
     }
     Ok(repo)
+}
+
+fn normalize_test_command_cwd(cwd: Option<String>) -> Result<Option<String>, String> {
+    let Some(raw) = cwd else {
+        return Ok(None);
+    };
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || trimmed == "." {
+        return Ok(None);
+    }
+
+    let trimmed = trimmed.trim_start_matches("./");
+    let path = Path::new(trimmed);
+    if path.components().any(|component| {
+        matches!(
+            component,
+            Component::ParentDir | Component::RootDir | Component::Prefix(_)
+        )
+    }) {
+        return Err("Test working directory must stay inside the selected repository.".to_string());
+    }
+
+    let normalized = trimmed.replace('\\', "/");
+    Ok(Some(normalized))
 }
 
 fn ensure_dirs(repo: &Path) -> Result<(), String> {
@@ -649,14 +678,44 @@ mod tests {
         let repo_str = repo.to_str().unwrap();
         init(repo_str).unwrap();
 
-        let session = set_test_command(repo_str, Some("  mvn test  ".to_string())).unwrap();
+        let session = set_test_command(
+            repo_str,
+            Some("  mvn test  ".to_string()),
+            Some("  apps/desktop  ".to_string()),
+        )
+        .unwrap();
         assert_eq!(session.test_command.as_deref(), Some("mvn test"));
+        assert_eq!(session.test_command_cwd.as_deref(), Some("apps/desktop"));
 
         let reloaded = load(repo_str).unwrap().unwrap();
         assert_eq!(reloaded.session.test_command.as_deref(), Some("mvn test"));
+        assert_eq!(reloaded.session.test_command_cwd.as_deref(), Some("apps/desktop"));
 
-        let cleared = set_test_command(repo_str, Some("   ".to_string())).unwrap();
+        let cleared = set_test_command(
+            repo_str,
+            Some("   ".to_string()),
+            Some("   ".to_string()),
+        )
+        .unwrap();
         assert!(cleared.test_command.is_none());
+        assert!(cleared.test_command_cwd.is_none());
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn set_test_command_rejects_traversal_cwd() {
+        let repo = temp_git_repo("testcmd-cwd");
+        let repo_str = repo.to_str().unwrap();
+        init(repo_str).unwrap();
+
+        let err = set_test_command(
+            repo_str,
+            Some("npm test".to_string()),
+            Some("../outside".to_string()),
+        )
+        .unwrap_err();
+        assert!(err.contains("Test working directory must stay inside"));
 
         fs::remove_dir_all(&repo).unwrap();
     }

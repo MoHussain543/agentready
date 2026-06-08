@@ -27,7 +27,7 @@ export function HelpModal({ onClose }: HelpModalProps) {
           <img src={homeLogo} alt="AgentReady logo" className="help-modal-logo" />
           <h2 id="help-modal-title">Verify before you commit.</h2>
           <p className="subtitle">
-            AgentReady checks the current diff against the original request, baseline review rules, and optional local tests before you commit.
+            AgentReady scans the current diff for obvious risks and optional local test failures before you commit.
           </p>
         </div>
 
@@ -46,18 +46,18 @@ export function HelpModal({ onClose }: HelpModalProps) {
           <h3>What gets checked</h3>
           <ul className="modal-list">
             <li><strong>Diff completeness</strong> — are there any uncommitted changes to check at all?</li>
-            <li><strong>Feature alignment</strong> — does what changed in the code actually relate to what you asked the AI to build?</li>
-            <li><strong>Baseline code patterns</strong> — structural checks on the diff that catch common AI agent mistakes.</li>
+            <li><strong>Obvious risk checks</strong> — deleted tests, suspicious secrets, dependency/config changes, placeholder content, and other deterministic red flags.</li>
             <li><strong>Tests</strong> — if you provide a test command, it runs and the result is included in the verdict.</li>
+            <li><strong>Feature alignment</strong> — available in Pro for deeper review of whether the diff matches what you asked the AI to build.</li>
           </ul>
         </div>
 
         <div className="modal-section help-modal-section-card">
           <h3>Verdicts</h3>
           <ul className="modal-list">
-            <li><strong>Ready to commit</strong> — the diff passed all baseline checks.</li>
+            <li><strong>No obvious red flags</strong> — free checks did not find obvious risks in the diff.</li>
             <li><strong>Needs review</strong> — something deserves a closer look before committing.</li>
-            <li><strong>Not ready</strong> — a blocking issue was found in the diff or tests.</li>
+            <li><strong>Risk detected</strong> — a blocking issue was found in the diff or tests.</li>
           </ul>
         </div>
 
