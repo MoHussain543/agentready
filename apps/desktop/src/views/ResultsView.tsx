@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { VerdictBadge } from "../components/VerdictBadge";
 import type { FeatureSessionInput, ReadinessReport, TestResult } from "../types";
 
 interface ResultsViewProps {
@@ -39,21 +38,21 @@ export function ResultsView({
 
   return (
     <section className="view view-wide results-view">
-      <header className="view-header">
-        <p className="eyebrow">{repoPath}</p>
-        <div className="title-row">
-          <h1>{session.title}</h1>
-          <VerdictBadge verdict={report.verdict} />
-        </div>
+      <div className={`verdict-hero verdict-hero-${report.verdict.toLowerCase()}`}>
+        <p className="eyebrow verdict-hero-repo">{repoPath}</p>
+        <span className="verdict-hero-label">{report.verdict.replaceAll("_", " ")}</span>
+        <h1 className="verdict-hero-title">{session.title}</h1>
         {report.verdictExplanation && (
-          <p className="verdict-explanation">{report.verdictExplanation}</p>
+          <p className="verdict-hero-explanation">{report.verdictExplanation}</p>
         )}
+      </div>
+
+      <header className="view-header view-header-compact">
         <p className="meta">
           Generated {new Date(report.generatedAt).toLocaleString()} ·{" "}
           {report.checkSuite}
           {typeof report.durationMs === "number" ? ` · ${report.durationMs}ms` : ""}
-          {" · "}engine{" "}
-          {report.engineVersion}
+          {" · "}engine {report.engineVersion}
         </p>
         {!isLatestReport && (
           <p className="archived-note">
@@ -76,10 +75,6 @@ export function ResultsView({
 
       <div className="inspection-summary-strip">
         <div className="summary-grid">
-          <div className="summary-stat summary-stat-verdict">
-            <span className="summary-label">Verdict</span>
-            <strong>{report.verdict.replaceAll("_", " ")}</strong>
-          </div>
           <div className="summary-stat summary-stat-files">
             <span className="summary-label">Files changed</span>
             <strong>{report.diffSummary.totalFiles}</strong>
@@ -101,6 +96,23 @@ export function ResultsView({
           <p>{error}</p>
         </div>
       )}
+
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <h2>Repair prompt</h2>
+            <p className="hint">Paste this into Cursor or Claude to guide the fix.</p>
+          </div>
+          <button
+            type="button"
+            className="secondary copy-button"
+            onClick={copyRepairPrompt}
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+        <pre className="repair-prompt">{report.repairPrompt}</pre>
+      </div>
 
       <div className="results-overview-layout">
         <div className="card">
@@ -165,25 +177,6 @@ export function ResultsView({
           <TestResultDetail testResult={report.testResult} />
         </div>
       )}
-
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h2>Repair prompt</h2>
-          </div>
-          <button
-            type="button"
-            className="secondary copy-button"
-            onClick={copyRepairPrompt}
-          >
-            {copied ? "Copied" : "Copy"}
-          </button>
-        </div>
-        <p className="hint">
-          Paste this into Cursor or Claude to guide the fix.
-        </p>
-        <pre className="repair-prompt">{report.repairPrompt}</pre>
-      </div>
 
       <div className="actions">
         <button
@@ -292,8 +285,10 @@ function DiffList({ label, paths }: { label: string; paths: string[] }) {
     return null;
   }
 
+  const variant = label.toLowerCase();
+
   return (
-    <div className="diff-group">
+    <div className={`diff-group diff-group-${variant}`}>
       <h3>{label}</h3>
       <ul>
         {paths.map((path) => (

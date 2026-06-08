@@ -199,6 +199,80 @@ pub fn load_report_by_path(repo_path: &str, report_path: &str) -> Result<Readine
         .ok_or_else(|| format!("Report not found: {rel}"))
 }
 
+/// Delete a specific saved report by its repo-relative path.
+/// Rejects paths that are not inside `.agentready/reports/` to prevent traversal.
+pub fn delete_report(repo_path: &str, report_path: &str) -> Result<(), String> {
+    let repo = validated_repo(repo_path)?;
+
+    let rel = report_path.trim_start_matches('/').trim_start_matches("./");
+    let rel_path = Path::new(rel);
+    let mut components = rel_path.components();
+    let valid_prefix = matches!(components.next(), Some(Component::Normal(first)) if first == ".agentready")
+        && matches!(components.next(), Some(Component::Normal(second)) if second == "reports");
+    let has_illegal_component = rel_path.components().any(|component| {
+        matches!(
+            component,
+            Component::ParentDir | Component::RootDir | Component::Prefix(_)
+        )
+    });
+
+    if !valid_prefix || has_illegal_component {
+        return Err("Invalid report path: must be inside .agentready/reports/".to_string());
+    }
+
+    let full_path = repo.join(rel_path);
+    if !full_path.exists() {
+        return Err(format!("Report not found: {rel}"));
+    }
+
+    fs::remove_file(&full_path)
+        .map_err(|error| format!("Failed to delete report: {error}"))?;
+
+    // Keep the session's count and latest pointer consistent.
+    if let Ok(mut session) = load_or_create_session(&repo) {
+        session.report_history_count = count_reports(&repo);
+        let deleted_rel = format!(
+            "{REPORTS_REL}/{}",
+            rel_path.file_name().and_then(|n| n.to_str()).unwrap_or_default()
+        );
+        if session.latest_report_path.as_deref() == Some(&deleted_rel) {
+            let mut candidates: Vec<String> = Vec::new();
+            if let Ok(read_dir) = fs::read_dir(reports_dir(&repo)) {
+                for entry in read_dir.filter_map(Result::ok) {
+                    let p = entry.path();
+                    if p.extension().map(|ext| ext == "json").unwrap_or(false) {
+                        if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+                            candidates.push(name.to_string());
+                        }
+                    }
+                }
+            }
+            candidates.sort_by(|a, b| b.cmp(a)); // newest first
+            if let Some(newest_name) = candidates.first() {
+                let newest_path = reports_dir(&repo).join(newest_name);
+                if let Ok(Some(newest_report)) = read_json::<ReadinessReport>(&newest_path) {
+                    session.latest_report_path = Some(format!("{REPORTS_REL}/{newest_name}"));
+                    session.latest_report_verdict = Some(newest_report.verdict.clone());
+                    let _ = write_json(&latest_report_path(&repo), &newest_report);
+                } else {
+                    session.latest_report_path = None;
+                    session.latest_report_verdict = None;
+                    let _ = fs::remove_file(latest_report_path(&repo));
+                }
+            } else {
+                session.latest_report_path = None;
+                session.latest_report_verdict = None;
+                session.last_readiness_run_at = None;
+                let _ = fs::remove_file(latest_report_path(&repo));
+            }
+        }
+        session.last_accessed_at = now();
+        let _ = write_json(&session_path(&repo), &session);
+    }
+
+    Ok(())
+}
+
 /// List saved reports for the repo, newest first.
 pub fn list_reports(repo_path: &str) -> Result<Vec<ReportHistoryEntry>, String> {
     let repo = validated_repo(repo_path)?;
@@ -623,6 +697,88 @@ mod tests {
         let error = init(repo.to_str().unwrap()).unwrap_err();
 
         assert!(error.contains("not a git repository"));
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn delete_report_removes_file_and_updates_count() {
+        let repo = temp_git_repo("delete-report");
+        let repo_str = repo.to_str().unwrap();
+        init(repo_str).unwrap();
+        let session = save_report(repo_str, sample_report("NOT_READY")).unwrap();
+        assert_eq!(session.report_history_count, 1);
+
+        let rel_path = session.latest_report_path.clone().unwrap();
+        let full_path = repo.join(&rel_path);
+        assert!(full_path.exists());
+
+        delete_report(repo_str, &rel_path).unwrap();
+        assert!(!full_path.exists());
+
+        let reports = list_reports(repo_str).unwrap();
+        assert!(reports.is_empty());
+
+        // Session count updated on disk.
+        let reloaded = load(repo_str).unwrap().unwrap();
+        assert_eq!(reloaded.session.report_history_count, 0);
+        assert!(reloaded.session.latest_report_path.is_none());
+        assert!(reloaded.session.latest_report_verdict.is_none());
+        assert!(load_latest_report(repo_str).unwrap().is_none());
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn delete_report_rejects_traversal() {
+        let repo = temp_git_repo("delete-traversal");
+        let repo_str = repo.to_str().unwrap();
+
+        let err = delete_report(repo_str, "../secret.json").unwrap_err();
+        assert!(err.contains("Invalid report path"));
+
+        let err2 = delete_report(repo_str, ".agentready/reports/../../secret.json").unwrap_err();
+        assert!(err2.contains("Invalid report path"));
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn delete_report_missing_file_returns_error() {
+        let repo = temp_git_repo("delete-missing");
+        let repo_str = repo.to_str().unwrap();
+        init(repo_str).unwrap();
+
+        let err = delete_report(repo_str, ".agentready/reports/nonexistent.json").unwrap_err();
+        assert!(err.contains("Report not found"));
+
+        fs::remove_dir_all(&repo).unwrap();
+    }
+
+    #[test]
+    fn delete_report_latest_pointer_advances_to_next() {
+        let repo = temp_git_repo("delete-latest-advance");
+        let repo_str = repo.to_str().unwrap();
+        init(repo_str).unwrap();
+
+        let session1 = save_report(repo_str, sample_report("NOT_READY")).unwrap();
+        // Give second report a distinct timestamp
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        let session2 = save_report(repo_str, sample_report("READY_TO_COMMIT")).unwrap();
+        assert_eq!(session2.report_history_count, 2);
+
+        // Delete the latest report.
+        let latest_path = session2.latest_report_path.clone().unwrap();
+        delete_report(repo_str, &latest_path).unwrap();
+
+        let reloaded = load(repo_str).unwrap().unwrap();
+        // The older report becomes the new latest pointer.
+        assert_eq!(reloaded.session.report_history_count, 1);
+        assert_eq!(reloaded.session.latest_report_verdict.as_deref(), Some("NOT_READY"));
+        assert!(reloaded.session.latest_report_path.is_some());
+        let latest = load_latest_report(repo_str).unwrap().unwrap();
+        assert_eq!(latest.verdict, "NOT_READY");
+        let _ = session1; // used to set up initial state
 
         fs::remove_dir_all(&repo).unwrap();
     }

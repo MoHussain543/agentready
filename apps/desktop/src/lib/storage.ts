@@ -138,6 +138,20 @@ export async function listReports(
   }
 }
 
+export async function deleteReport(
+  repoPath: string,
+  reportPath: string,
+): Promise<void> {
+  try {
+    await invoke<void>("delete_report", {
+      repoPath: repoPath.trim(),
+      reportPath,
+    });
+  } catch (error) {
+    throw new Error(formatError(error, "Failed to delete the report."));
+  }
+}
+
 function formatError(error: unknown, fallback: string): string {
   if (typeof error === "string" && error.trim().length > 0) {
     return error;

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { VerdictBadge } from "../components/VerdictBadge";
 import type { RecentProjectEntry } from "../lib/recentProjects";
 import type { ReportHistoryEntry } from "../lib/storage";
@@ -12,6 +13,7 @@ interface ReportsViewProps {
   onSelectProject: (project: RecentProjectEntry) => void;
   onBackToProjects: () => void;
   onOpenReport: (entry: ReportHistoryEntry) => void;
+  onDeleteReport: (entry: ReportHistoryEntry) => void;
 }
 
 export function ReportsView({
@@ -24,7 +26,15 @@ export function ReportsView({
   onSelectProject,
   onBackToProjects,
   onOpenReport,
+  onDeleteReport,
 }: ReportsViewProps) {
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+
+  const handleConfirmDelete = (entry: ReportHistoryEntry) => {
+    setConfirmingDelete(null);
+    onDeleteReport(entry);
+  };
+
   return (
     <section className="view reports-view">
       <header className="view-header">
@@ -106,17 +116,48 @@ export function ReportsView({
               <ul className="history-list">
                 {reports.map((entry) => (
                   <li key={entry.fileName}>
-                    <button
-                      type="button"
-                      className="history-entry"
-                      disabled={isBusy}
-                      onClick={() => onOpenReport(entry)}
-                    >
-                      <VerdictBadge verdict={entry.verdict} />
-                      <span className="meta">
-                        {new Date(entry.generatedAt).toLocaleString()}
-                      </span>
-                    </button>
+                    {confirmingDelete === entry.fileName ? (
+                      <div className="history-entry-confirm">
+                        <span className="meta confirm-label">Delete this report?</span>
+                        <button
+                          type="button"
+                          className="delete-confirm-btn"
+                          onClick={() => handleConfirmDelete(entry)}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          className="delete-cancel-btn"
+                          onClick={() => setConfirmingDelete(null)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="history-entry-row">
+                        <button
+                          type="button"
+                          className="history-entry"
+                          disabled={isBusy}
+                          onClick={() => onOpenReport(entry)}
+                        >
+                          <VerdictBadge verdict={entry.verdict} />
+                          <span className="meta">
+                            {new Date(entry.generatedAt).toLocaleString()}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          className="delete-entry-btn"
+                          disabled={isBusy}
+                          onClick={() => setConfirmingDelete(entry.fileName)}
+                          title="Delete report"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

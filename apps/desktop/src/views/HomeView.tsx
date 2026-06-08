@@ -1,3 +1,4 @@
+import homeLogo from "../assets/agentready-glyph.png";
 import { VerdictBadge } from "../components/VerdictBadge";
 import type { RecentProjectEntry } from "../lib/recentProjects";
 
@@ -47,8 +48,13 @@ export function HomeView({
 
       <div className="home-hero">
         <header className="home-header">
+          <img
+            src={homeLogo}
+            alt="AgentReady logo"
+            className="home-logo"
+          />
           <h1>AgentReady</h1>
-          <p className="subtitle">Verify AI-generated code before you commit.</p>
+          <p className="subtitle">Verify before you commit.</p>
         </header>
 
         {error && (
@@ -61,21 +67,31 @@ export function HomeView({
         <div className="home-actions">
           <button
             type="button"
-            className="primary-purple"
+            className="home-action-card home-action-open"
             disabled={isBusy}
             onClick={onOpenProject}
           >
-            <FolderIcon />
-            <span>{isBusy ? "Opening..." : "Open project"}</span>
+            <span className="home-action-icon">
+              <FolderIcon />
+            </span>
+            <span className="home-action-copy">
+              <strong>{isBusy ? "Opening..." : "Open project"}</strong>
+              <span>Choose a local git repository and start a verification session.</span>
+            </span>
           </button>
           <button
             type="button"
-            className="secondary"
+            className="home-action-card home-action-reports"
             disabled={isBusy}
             onClick={onViewSavedReports}
           >
-            <ReportIcon />
-            <span>View saved reports</span>
+            <span className="home-action-icon">
+              <ReportIcon />
+            </span>
+            <span className="home-action-copy">
+              <strong>View saved reports</strong>
+              <span>Browse previous report history by project and reopen a saved result.</span>
+            </span>
           </button>
         </div>
       </div>
@@ -86,7 +102,7 @@ export function HomeView({
             <h2>Recent projects</h2>
           </div>
           <ul className="recent-projects-list">
-            {recentProjects.map((project) => (
+            {recentProjects.slice(0, 5).map((project) => (
               <li key={project.repoPath}>
                 <button
                   type="button"

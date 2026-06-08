@@ -1,3 +1,5 @@
+import homeLogo from "../assets/agentready-glyph.png";
+
 interface HelpModalProps {
   onClose: () => void;
 }
@@ -6,42 +8,70 @@ export function HelpModal({ onClose }: HelpModalProps) {
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <section
-        className="modal-card"
+        className="modal-card help-modal-card"
         role="dialog"
         aria-modal="true"
         aria-labelledby="help-modal-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="card-header">
-          <div>
-            <p className="eyebrow">How it works</p>
-            <h2 id="help-modal-title">AgentReady at a glance</h2>
-          </div>
-          <button type="button" className="secondary" onClick={onClose}>
-            Close
-          </button>
+        <button
+          type="button"
+          className="modal-close-button"
+          aria-label="Close help"
+          onClick={onClose}
+        >
+          ×
+        </button>
+
+        <div className="help-modal-header">
+          <img src={homeLogo} alt="AgentReady logo" className="help-modal-logo" />
+          <h2 id="help-modal-title">Verify before you commit.</h2>
+          <p className="subtitle">
+            AgentReady checks the current diff against the original request, baseline review rules, and optional local tests before you commit.
+          </p>
         </div>
 
-        <p className="subtitle">
-          AgentReady verifies AI-generated code before you commit by checking the current diff, the original request, and optional local tests.
-        </p>
+        <div className="help-modal-pill">How AgentReady works</div>
 
-        <div className="modal-section">
+        <div className="modal-section help-modal-section-card">
           <h3>Core flow</h3>
           <ol className="modal-list">
             <li>Open a local git repository.</li>
             <li>Describe what you asked the AI to build.</li>
-            <li>Run a readiness check before committing the diff.</li>
+            <li>Run a readiness check and review the verdict.</li>
           </ol>
         </div>
 
-        <div className="modal-section">
+        <div className="modal-section help-modal-section-card">
+          <h3>What gets checked</h3>
+          <ul className="modal-list">
+            <li><strong>Diff completeness</strong> — are there any uncommitted changes to check at all?</li>
+            <li><strong>Feature alignment</strong> — does what changed in the code actually relate to what you asked the AI to build?</li>
+            <li><strong>Baseline code patterns</strong> — structural checks on the diff that catch common AI agent mistakes.</li>
+            <li><strong>Tests</strong> — if you provide a test command, it runs and the result is included in the verdict.</li>
+          </ul>
+        </div>
+
+        <div className="modal-section help-modal-section-card">
           <h3>Verdicts</h3>
           <ul className="modal-list">
-            <li><strong>Ready to commit</strong> means the baseline checks passed.</li>
-            <li><strong>Needs review</strong> means something should be inspected before committing.</li>
-            <li><strong>Not ready</strong> means a blocking issue was found.</li>
+            <li><strong>Ready to commit</strong> — the diff passed all baseline checks.</li>
+            <li><strong>Needs review</strong> — something deserves a closer look before committing.</li>
+            <li><strong>Not ready</strong> — a blocking issue was found in the diff or tests.</li>
           </ul>
+        </div>
+
+        <div className="modal-section help-modal-section-card">
+          <h3>Repair prompt</h3>
+          <p className="modal-body-text">
+            Every report includes a repair prompt — a plain-language description of what needs to be fixed, written to be pasted directly into Cursor, Claude, or any AI agent. It describes the specific issue found, not just a restatement of your original request.
+          </p>
+        </div>
+
+        <div className="help-modal-footer">
+          <button type="button" className="primary-purple" onClick={onClose}>
+            Got it
+          </button>
         </div>
       </section>
     </div>

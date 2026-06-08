@@ -11,6 +11,7 @@ import {
 } from "./lib/recentProjects";
 import { runReadinessCheck } from "./lib/readiness";
 import {
+  deleteReport,
   initRepoStorage,
   listReports,
   loadLatestReport,
@@ -276,6 +277,40 @@ function App() {
     }
   };
 
+  const handleDeleteReport = async (entry: ReportHistoryEntry) => {
+    if (!reportBrowserProject) return;
+    setIsBusy(true);
+    setError(null);
+    try {
+      await deleteReport(reportBrowserProject.repoPath, entry.path);
+      const updated = await listReports(reportBrowserProject.repoPath);
+      const repoState = await initRepoStorage(reportBrowserProject.repoPath);
+      setReportBrowserEntries(updated);
+      rememberRepo(reportBrowserProject.repoPath, repoState.session);
+      setReportBrowserProject((current) =>
+        current
+          ? {
+              ...current,
+              latestVerdict: repoState.session.latestReportVerdict as RecentProjectEntry["latestVerdict"],
+              latestReportPath: repoState.session.latestReportPath,
+              reportHistoryCount: repoState.session.reportHistoryCount,
+              lastCheckedAt: repoState.session.lastReadinessRunAt,
+              lastOpenedAt: repoState.session.lastAccessedAt,
+            }
+          : current,
+      );
+      // If the user had been viewing this exact report in results, clear it so
+      // back-navigation does not silently render a deleted report's data.
+      if (resultsBackTarget === "reports" && state.report?.generatedAt === entry.generatedAt) {
+        setState((current) => ({ ...current, report: null }));
+      }
+    } catch (deleteError) {
+      setError(errorMessage(deleteError, "Failed to delete the report."));
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
   const handleSaveSettings = async (javaBinaryOverride: string | null) => {
     setIsSavingSettings(true);
     setSettingsError(null);
@@ -327,6 +362,7 @@ function App() {
               void handleOpenSavedReport(reportBrowserProject, entry);
             }
           }}
+          onDeleteReport={(entry) => void handleDeleteReport(entry)}
         />
       )}
 

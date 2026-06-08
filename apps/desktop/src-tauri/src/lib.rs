@@ -62,6 +62,11 @@ fn list_reports(repo_path: String) -> Result<Vec<ReportHistoryEntry>, String> {
 }
 
 #[tauri::command]
+fn delete_report(repo_path: String, report_path: String) -> Result<(), String> {
+    storage::delete_report(&repo_path, &report_path)
+}
+
+#[tauri::command]
 fn load_app_settings(app: tauri::AppHandle) -> Result<AppSettings, String> {
     settings::load(&app)
 }
@@ -88,6 +93,7 @@ pub fn run() {
             load_latest_report,
             load_report_by_path,
             list_reports,
+            delete_report,
             load_app_settings,
             save_app_settings
         ])

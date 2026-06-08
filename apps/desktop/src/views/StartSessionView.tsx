@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { VerdictBadge } from "../components/VerdictBadge";
 import type { CurrentSession } from "../lib/storage";
 import type { FeatureSessionInput, Verdict } from "../types";
@@ -46,6 +47,10 @@ export function StartSessionView({
 
   const testCommandMissing = runTests && testCommand.trim().length === 0;
 
+  if (isRunning) {
+    return <RunningOverlay />;
+  }
+
   return (
     <section className="view session-view">
       <header className="view-header">
@@ -54,10 +59,19 @@ export function StartSessionView({
         <p className="repo-path">{repoPath}</p>
       </header>
 
-      {error && (
+      {error && !isNoDiff && (
         <div className="error-banner" role="alert">
-          <strong>{isNoDiff ? "Nothing to check yet" : "Could not run readiness check"}</strong>
+          <strong>Could not run readiness check</strong>
           <p>{error}</p>
+        </div>
+      )}
+
+      {isNoDiff && (
+        <div className="nodiff-notice" role="status">
+          <strong>No uncommitted changes detected</strong>
+          <p>
+            AgentReady analyzes your git diff. Make changes with your AI agent first, then come back and run a check.
+          </p>
         </div>
       )}
 
@@ -172,13 +186,47 @@ export function StartSessionView({
           disabled={!canRun}
           onClick={onRunCheck}
         >
-          {isRunning
-            ? "Running check..."
-            : runTests
-              ? "Run check with tests"
-              : "Run readiness check"}
+          {runTests ? "Run check with tests" : "Run readiness check"}
         </button>
       </div>
     </section>
+  );
+}
+
+const RUNNING_MESSAGES = [
+  "Reading your diff…",
+  "Checking feature alignment…",
+  "Running analysis…",
+  "Almost done…",
+];
+
+function RunningOverlay() {
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const interval = setInterval(() => {
+      setVisible(false);
+      timeoutId = setTimeout(() => {
+        setIndex((i) => (i + 1) % RUNNING_MESSAGES.length);
+        setVisible(true);
+      }, 250);
+    }, 2600);
+    return () => {
+      clearInterval(interval);
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="run-overlay">
+      <div className="run-spinner" />
+      <p className={`run-message${visible ? " run-message-visible" : ""}`}>
+        {RUNNING_MESSAGES[index]}
+      </p>
+    </div>
   );
 }
