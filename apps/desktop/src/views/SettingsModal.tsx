@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 
 import type { AppSettings } from "../lib/appSettings";
+import { decodeTokenClaims, isTokenExpired } from "../lib/auth";
 
 interface SettingsModalProps {
   settings: AppSettings | null;
   isSaving: boolean;
   error: string | null;
+  authToken: string | null;
   onSaveJavaOverride: (value: string | null) => Promise<void>;
+  onSignIn: () => Promise<void>;
+  onSignOut: () => Promise<void>;
   onClose: () => void;
 }
 
@@ -14,7 +18,10 @@ export function SettingsModal({
   settings,
   isSaving,
   error,
+  authToken,
   onSaveJavaOverride,
+  onSignIn,
+  onSignOut,
   onClose,
 }: SettingsModalProps) {
   const [javaOverride, setJavaOverride] = useState(settings?.javaBinaryOverride ?? "");
@@ -22,6 +29,11 @@ export function SettingsModal({
   useEffect(() => {
     setJavaOverride(settings?.javaBinaryOverride ?? "");
   }, [settings]);
+
+  const claims = authToken ? decodeTokenClaims(authToken) : null;
+  const expired = claims ? isTokenExpired(claims) : false;
+  const isPro = claims?.pro === true && !expired;
+  const isSignedIn = authToken !== null && !expired;
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -48,6 +60,48 @@ export function SettingsModal({
             <p>{error}</p>
           </div>
         )}
+
+        <div className="modal-section">
+          <h3>Account</h3>
+          {isSignedIn ? (
+            <>
+              <p className="hint">
+                {isPro
+                  ? "Pro plan active — AI alignment review is enabled on every check."
+                  : "Free plan — upgrade at agentreadyai.dev to enable AI alignment review."}
+              </p>
+              <div className="actions">
+                <span className={`badge ${isPro ? "badge-pro" : "badge-free"}`}>
+                  {isPro ? "PRO" : "FREE"}
+                </span>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => void onSignOut()}
+                >
+                  Sign out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="hint">
+                {expired
+                  ? "Your session has expired. Sign in again to re-enable AI alignment review."
+                  : "Sign in to enable AI alignment review on every check."}
+              </p>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="primary-purple"
+                  onClick={() => void onSignIn()}
+                >
+                  Sign in to AgentReady
+                </button>
+              </div>
+            </>
+          )}
+        </div>
 
         <div className="modal-section">
           <h3>Java binary override</h3>

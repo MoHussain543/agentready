@@ -31,7 +31,8 @@ pub async fn run_readiness(app: &tauri::AppHandle, request: EngineRequest) -> Re
         return Err(format!("{}: {}", error.code, error.message));
     };
 
-    crate::pro_review::run_if_eligible(&request, &mut report).await;
+    let user_token = crate::auth::load_token(app);
+    crate::pro_review::run_if_eligible(&request, &mut report, user_token).await;
 
     Ok(report)
 }

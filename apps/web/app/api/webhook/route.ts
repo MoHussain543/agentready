@@ -28,13 +28,17 @@ export async function POST(req: NextRequest) {
       const subscriptionId = session.subscription as string;
 
       if (clerkUserId) {
-        await supabaseAdmin.from("subscriptions").upsert({
+        const { error } = await supabaseAdmin.from("subscriptions").upsert({
           clerk_user_id: clerkUserId,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           status: "pro",
           updated_at: new Date().toISOString(),
         }, { onConflict: "clerk_user_id" });
+        if (error) console.error("Supabase upsert error:", JSON.stringify(error));
+        else console.log("Supabase upsert success for", clerkUserId);
+      } else {
+        console.error("No clerkUserId in session metadata");
       }
       break;
     }

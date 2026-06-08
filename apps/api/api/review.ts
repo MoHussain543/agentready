@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import Anthropic from "@anthropic-ai/sdk";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { jwtVerify } from "jose";
 
 const MODEL = "claude-haiku-4-5-20251001";
 
@@ -44,12 +45,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  // Rate limit by IP — 20 reviews per hour per user (skipped if Upstash is not configured)
+  // Verify user JWT — confirms the user has an active AgentReady account
+  const userToken = req.headers["x-agentready-user-token"];
+  const jwtSecret = process.env.AGENTREADY_JWT_SECRET;
+  if (!jwtSecret) {
+    return res.status(500).json({ error: "Service not configured" });
+  }
+  if (!userToken || typeof userToken !== "string") {
+    return res.status(401).json({ error: "User authentication required" });
+  }
+  let userClaims: { sub: string; pro: boolean };
+  try {
+    const secret = new TextEncoder().encode(jwtSecret);
+    const { payload } = await jwtVerify(userToken, secret);
+    userClaims = payload as { sub: string; pro: boolean };
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired session. Sign in again." });
+  }
+  if (!userClaims.pro) {
+    return res.status(403).json({ error: "Pro subscription required for AI review." });
+  }
+
+  // Rate limit by user ID — 20 reviews per hour per subscriber
   if (ratelimit) {
-    const ip =
-      (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0].trim() ??
-      "unknown";
-    const { success } = await ratelimit.limit(ip);
+    const { success } = await ratelimit.limit(userClaims.sub);
     if (!success) {
       return res.status(429).json({ error: "Too many requests. Try again in an hour." });
     }

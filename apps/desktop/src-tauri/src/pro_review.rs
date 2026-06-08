@@ -12,10 +12,24 @@ const REVIEW_API_URL: &str = "https://agentready-api.vercel.app/api/review";
 // None in dev builds where the var isn't set — pro review is silently skipped.
 const APP_TOKEN: Option<&str> = option_env!("AGENTREADY_TOKEN");
 
-pub async fn run_if_eligible(request: &EngineRequest, report: &mut ReadinessReport) {
-    let token = match APP_TOKEN {
+pub async fn run_if_eligible(
+    request: &EngineRequest,
+    report: &mut ReadinessReport,
+    user_token: Option<String>,
+) {
+    let app_token = match APP_TOKEN {
         Some(t) if !t.is_empty() => t,
-        _ => return, // no token baked in — skip silently in dev builds
+        _ => return, // dev build, skip silently
+    };
+
+    let user_token = match user_token {
+        Some(t) if !t.is_empty() => t,
+        _ => {
+            report.pro_review = Some(skipped(
+                "Sign in at agentreadyai.dev to enable AI alignment review.",
+            ));
+            return;
+        }
     };
 
     let spec = match &request.feature_spec {
@@ -70,7 +84,8 @@ pub async fn run_if_eligible(request: &EngineRequest, report: &mut ReadinessRepo
 
     let response = match client
         .post(REVIEW_API_URL)
-        .header("x-agentready-token", token)
+        .header("x-agentready-token", app_token)
+        .header("x-agentready-user-token", &user_token)
         .header("content-type", "application/json")
         .json(&body)
         .send()
@@ -82,6 +97,13 @@ pub async fn run_if_eligible(request: &EngineRequest, report: &mut ReadinessRepo
             return;
         }
     };
+
+    if response.status() == 401 || response.status() == 403 {
+        report.pro_review = Some(skipped(
+            "Session expired or subscription inactive. Open Settings to sign in again.",
+        ));
+        return;
+    }
 
     if !response.status().is_success() {
         eprintln!("[pro_review] API error: HTTP {}", response.status());

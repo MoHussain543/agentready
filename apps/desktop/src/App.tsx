@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { listen } from "@tauri-apps/api/event";
 
 import { loadAppSettings, saveAppSettings, type AppSettings } from "./lib/appSettings";
+import { getAuthToken, clearAuthToken, openSignIn } from "./lib/auth";
 import { buildFeatureSpec, sessionInputFromSpec } from "./lib/featureSpec";
 import {
   loadRecentProjects,
@@ -86,6 +88,7 @@ function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   useEffect(() => {
     void loadAppSettings()
@@ -93,6 +96,14 @@ function App() {
       .catch(() => {
         // Keep the home screen usable even if the settings file is unavailable.
       });
+
+    void getAuthToken().then(setAuthToken).catch(() => null);
+
+    // Rust emits this event after saving the token (via HTTP callback or deep link)
+    const unlistenPromise = listen("auth-token-saved", () => {
+      void getAuthToken().then(setAuthToken);
+    });
+    return () => { void unlistenPromise.then((fn) => fn()); };
   }, []);
 
   const versionLabel = `v${appSettings?.appVersion ?? "0.1.0"}`;
@@ -320,6 +331,15 @@ function App() {
     }
   };
 
+  const handleSignIn = async () => {
+    await openSignIn();
+  };
+
+  const handleSignOut = async () => {
+    await clearAuthToken();
+    setAuthToken(null);
+  };
+
   const handleSaveSettings = async (javaBinaryOverride: string | null) => {
     setIsSavingSettings(true);
     setSettingsError(null);
@@ -451,7 +471,10 @@ function App() {
           settings={appSettings}
           isSaving={isSavingSettings}
           error={settingsError}
+          authToken={authToken}
           onSaveJavaOverride={handleSaveSettings}
+          onSignIn={handleSignIn}
+          onSignOut={handleSignOut}
           onClose={() => {
             setSettingsError(null);
             setIsSettingsOpen(false);

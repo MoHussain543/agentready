@@ -12,6 +12,61 @@ html {
   scroll-behavior: smooth;
 }
 
+@keyframes trim-shift {
+  from { background-position: 0% 50%; }
+  to   { background-position: 100% 50%; }
+}
+
+.gradient-trim-violet {
+  background: linear-gradient(90deg,
+    rgba(124,58,237,0.18),
+    rgba(139,92,246,0.95) 28%,
+    rgba(192,132,252,0.88) 50%,
+    rgba(96,165,250,0.90) 72%,
+    rgba(124,58,237,0.16));
+  background-size: 200% 100%;
+  animation: trim-shift 7.5s ease-in-out infinite alternate;
+}
+
+.gradient-trim-indigo {
+  background: linear-gradient(90deg,
+    rgba(96,165,250,0.12),
+    rgba(129,140,248,0.80) 24%,
+    rgba(167,139,250,0.95) 52%,
+    rgba(96,165,250,0.82) 76%,
+    rgba(96,165,250,0.12));
+  background-size: 200% 100%;
+  animation: trim-shift 9s ease-in-out infinite alternate;
+}
+
+.badge-pro {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(139,92,246,0.15);
+  border: 1px solid rgba(139,92,246,0.35);
+  color: #c4b5fd;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.badge-free {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(129,140,248,0.12);
+  border: 1px solid rgba(129,140,248,0.28);
+  color: #a5b4fc;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 body {
   background-color: #09090d;
   color: #edf2ff;
