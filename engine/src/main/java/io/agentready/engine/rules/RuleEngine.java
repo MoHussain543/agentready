@@ -16,8 +16,11 @@ public final class RuleEngine {
                 new ProductionWithoutTestsRule(),
                 new DeletedTestFilesRule(),
                 new ConfigEnvDependencyRiskRule(),
+                new MissingManifestDependencyRule(),
                 new LargeDiffRule(),
+                new PlaceholderContentRule(),
                 new HardcodedSecretsRule(),
+                new FeatureAlignmentDriftRule(),
                 new SpecKeywordMatchRule(),
                 new StatusCodeMatchRule(),
                 new RiskKeywordPresenceRule());

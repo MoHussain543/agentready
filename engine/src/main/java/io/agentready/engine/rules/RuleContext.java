@@ -60,6 +60,13 @@ public final class RuleContext {
         return addedLinesByPath;
     }
 
+    public List<String> addedLines(String path) {
+        if (path == null || addedLinesByPath == null) {
+            return List.of();
+        }
+        return addedLinesByPath.getOrDefault(path, List.of());
+    }
+
     public int totalChangedLines() {
         return totalChangedLines;
     }
@@ -113,5 +120,16 @@ public final class RuleContext {
             cachedCorpus = builder.toString();
         }
         return cachedCorpus;
+    }
+
+    public String fileCorpus(String path) {
+        StringBuilder builder = new StringBuilder();
+        if (path != null) {
+            builder.append(path.toLowerCase()).append('\n');
+        }
+        for (String line : addedLines(path)) {
+            builder.append(line.toLowerCase()).append('\n');
+        }
+        return builder.toString();
     }
 }

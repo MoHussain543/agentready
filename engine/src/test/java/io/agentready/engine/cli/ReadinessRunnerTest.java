@@ -18,6 +18,8 @@ import io.agentready.engine.model.TestResultStatus;
 import io.agentready.engine.model.Verdict;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -309,6 +311,51 @@ class ReadinessRunnerTest {
     }
 
     @Test
+    void placeholderContentWarnsForComingSoonCopy() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/HomeView.tsx", ChangeType.MODIFIED));
+        git.changedLines = 30;
+        git.addedLines = Map.of(
+                "src/HomeView.tsx",
+                List.of("  <span>Latest summary preview coming soon</span>"));
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(CheckStatus.warn, check(report, "placeholder-content").status());
+        assertTrue(report.findings().stream()
+                .anyMatch(f -> f.checkId().equals("placeholder-content")
+                        && f.paths().contains("src/HomeView.tsx")));
+    }
+
+    @Test
+    void missingManifestDependencyWarnsForUndeclaredImport() throws IOException {
+        Path repo = Files.createTempDirectory("agentready-missing-dep");
+        Files.createDirectories(repo.resolve("apps/desktop/src"));
+        Files.writeString(repo.resolve("apps/desktop/package.json"), """
+                {
+                  "name": "desktop",
+                  "dependencies": {
+                    "react": "^19.0.0"
+                  }
+                }
+                """);
+
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("apps/desktop/src/HomeView.tsx", ChangeType.MODIFIED));
+        git.changedLines = 30;
+        git.addedLines = Map.of(
+                "apps/desktop/src/HomeView.tsx",
+                List.of("import { formatDistanceToNow } from \"date-fns\";"));
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request(repo.toString(), null)).report();
+
+        assertEquals(CheckStatus.warn, check(report, "missing-manifest-dependency").status());
+        assertTrue(report.findings().stream()
+                .anyMatch(f -> f.checkId().equals("missing-manifest-dependency")
+                        && f.paths().contains("apps/desktop/src/HomeView.tsx")));
+    }
+
+    @Test
     void cleanDiffIsReadyToCommit() {
         FakeGitService git = new FakeGitService();
         git.files = List.of(
@@ -383,6 +430,17 @@ class ReadinessRunnerTest {
         assertEquals(52, report.diffSummary().totalChangedLines());
         assertEquals(CheckStatus.pass, check(report, "config-env-dependency-risk").status());
         assertEquals(CheckStatus.pass, check(report, "large-diff").status());
+    }
+
+    @Test
+    void deletedTestFileDoesNotAlsoTriggerConfigRisk() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("src/test/SecretScannerTest.java", ChangeType.DELETED));
+
+        ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
+
+        assertEquals(CheckStatus.pass, check(report, "config-env-dependency-risk").status());
+        assertEquals(CheckStatus.fail, check(report, "deleted-test-files").status());
     }
 
     @Test
@@ -514,6 +572,58 @@ class ReadinessRunnerTest {
 
         assertEquals(CheckStatus.fail, check(report, "spec-keyword-match").status());
         assertEquals(Verdict.NOT_READY, report.verdict());
+    }
+
+    @Test
+    void featureAlignmentDriftWarnsForUnrelatedSettingsFile() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(
+                new ChangedFile("apps/desktop/src/views/HomeView.tsx", ChangeType.MODIFIED),
+                new ChangedFile("apps/desktop/src/views/SettingsModal.tsx", ChangeType.MODIFIED));
+        git.changedLines = 60;
+        git.addedLines = Map.of(
+                "apps/desktop/src/views/HomeView.tsx",
+                List.of(
+                        "const handleOpenRecentProjectReports = () => {};",
+                        "<button>View reports</button>"),
+                "apps/desktop/src/views/SettingsModal.tsx",
+                List.of("<p>Settings are saved locally on this device.</p>"));
+        FeatureSpec spec = spec(
+                List.of("home", "recent", "project", "saved", "reports", "history"),
+                List.of(),
+                List.of());
+
+        ReadinessReport report =
+                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
+
+        assertEquals(CheckStatus.warn, check(report, "feature-alignment-drift").status());
+        assertTrue(report.findings().stream()
+                .anyMatch(f -> f.checkId().equals("feature-alignment-drift")
+                        && f.paths().contains("apps/desktop/src/views/SettingsModal.tsx")));
+    }
+
+    @Test
+    void featureAlignmentDriftWarnsForMisleadingUiLabel() {
+        FakeGitService git = new FakeGitService();
+        git.files = List.of(new ChangedFile("apps/desktop/src/views/HomeView.tsx", ChangeType.MODIFIED));
+        git.changedLines = 40;
+        git.addedLines = Map.of(
+                "apps/desktop/src/views/HomeView.tsx",
+                List.of(
+                        "const handleOpenRecentProjectReports = () => {};",
+                        "<button>Open settings</button>"));
+        FeatureSpec spec = spec(
+                List.of("home", "recent", "project", "saved", "reports", "history"),
+                List.of(),
+                List.of());
+
+        ReadinessReport report =
+                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
+
+        assertEquals(CheckStatus.warn, check(report, "feature-alignment-drift").status());
+        assertTrue(report.findings().stream()
+                .anyMatch(f -> f.checkId().equals("feature-alignment-drift")
+                        && f.paths().contains("apps/desktop/src/views/HomeView.tsx")));
     }
 
     @Test

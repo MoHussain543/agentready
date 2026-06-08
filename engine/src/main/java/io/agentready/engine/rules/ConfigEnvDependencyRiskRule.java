@@ -47,6 +47,9 @@ public final class ConfigEnvDependencyRiskRule implements Rule {
     }
 
     private static String riskLabel(FileClassifier classifier, String path) {
+        if (classifier.isTestFile(path)) {
+            return null;
+        }
         if (classifier.isEnvFile(path)) {
             return "env";
         }
