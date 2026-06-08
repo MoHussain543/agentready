@@ -1,4 +1,5 @@
 mod auth;
+mod contextforge;
 mod engine;
 mod models;
 mod narrate;
@@ -275,6 +276,8 @@ pub fn run() {
             clear_auth_token,
             open_sign_in,
             generate_narrative,
+            contextforge::check_context_forge_status,
+            contextforge::generate_context_files,
         ])
         .run(tauri::generate_context!())
         .expect("error while running AgentReady desktop");

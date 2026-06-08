@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { VerdictBadge } from "../components/VerdictBadge";
+import type { ContextForgeStatus } from "../lib/contextforge";
 import type { CurrentSession } from "../lib/storage";
 import type { FeatureSessionInput, Verdict } from "../types";
 
@@ -13,6 +14,10 @@ interface StartSessionViewProps {
   hasLatestReport: boolean;
   isRunning: boolean;
   error: string | null;
+  contextForgeStatus: ContextForgeStatus | null;
+  isGeneratingContext: boolean;
+  contextForgeError: string | null;
+  isPro: boolean;
   onSessionChange: (session: FeatureSessionInput) => void;
   onTestCommandChange: (testCommand: string) => void;
   onTestCommandCwdChange: (testCommandCwd: string) => void;
@@ -20,6 +25,7 @@ interface StartSessionViewProps {
   onViewLatest: () => void;
   onBack: () => void;
   onRunCheck: () => void;
+  onGenerateContextFiles: () => void;
 }
 
 export function StartSessionView({
@@ -32,6 +38,10 @@ export function StartSessionView({
   hasLatestReport,
   isRunning,
   error,
+  contextForgeStatus,
+  isGeneratingContext,
+  contextForgeError,
+  isPro,
   onSessionChange,
   onTestCommandChange,
   onTestCommandCwdChange,
@@ -39,6 +49,7 @@ export function StartSessionView({
   onViewLatest,
   onBack,
   onRunCheck,
+  onGenerateContextFiles,
 }: StartSessionViewProps) {
   const latestVerdict = latestSession?.latestReportVerdict ?? null;
   const lastRunAt = latestSession?.lastReadinessRunAt ?? null;
@@ -110,6 +121,16 @@ export function StartSessionView({
             </button>
           )}
         </div>
+      )}
+
+      {contextForgeStatus && contextForgeStatus.stack.detected && (
+        <ContextForgeBanner
+          status={contextForgeStatus}
+          isGenerating={isGeneratingContext}
+          error={contextForgeError}
+          isPro={isPro}
+          onGenerate={onGenerateContextFiles}
+        />
       )}
 
       <div className="card">
@@ -197,6 +218,77 @@ export function StartSessionView({
         </button>
       </div>
     </section>
+  );
+}
+
+function ContextForgeBanner({
+  status,
+  isGenerating,
+  error,
+  isPro,
+  onGenerate,
+}: {
+  status: ContextForgeStatus;
+  isGenerating: boolean;
+  error: string | null;
+  isPro: boolean;
+  onGenerate: () => void;
+}) {
+  const bothPresent = status.hasCursorrules && status.hasAgentsMd;
+  const partialPresent = status.hasCursorrules || status.hasAgentsMd;
+  const canAct = status.canGenerate && isPro;
+
+  return (
+    <div className="contextforge-banner">
+      <div className="contextforge-header">
+        <div className="contextforge-title-row">
+          <span className="contextforge-badge">ContextForge</span>
+          <span className="contextforge-stack">{status.stack.summary}</span>
+          {!isPro && <span className="contextforge-pro-tag">Pro</span>}
+        </div>
+        {bothPresent ? (
+          <span className="contextforge-status-ok">Context files ready</span>
+        ) : !isPro ? (
+          <p className="contextforge-desc">
+            Upgrade to Pro to generate .cursorrules and AGENTS.md for this stack.
+          </p>
+        ) : (
+          <p className="contextforge-desc">
+            {partialPresent
+              ? "Some context files are missing. Regenerate to add them."
+              : "Generate AI context files for this stack — writes .cursorrules and AGENTS.md to your repo."}
+          </p>
+        )}
+      </div>
+
+      {error && (
+        <p className="contextforge-error" role="alert">{error}</p>
+      )}
+
+      {canAct && (
+        <div className="contextforge-actions">
+          <button
+            type="button"
+            className="secondary contextforge-btn"
+            disabled={isGenerating}
+            onClick={onGenerate}
+          >
+            {isGenerating ? (
+              <>
+                <span className="contextforge-spinner" />
+                {bothPresent ? "Regenerating…" : "Generating…"}
+              </>
+            ) : bothPresent ? (
+              "Regenerate"
+            ) : partialPresent ? (
+              "Regenerate context files"
+            ) : (
+              "Generate context files"
+            )}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

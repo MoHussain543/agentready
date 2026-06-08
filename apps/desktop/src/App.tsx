@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 
 import { loadAppSettings, saveAppSettings, type AppSettings } from "./lib/appSettings";
+import { checkContextForgeStatus, generateContextFiles, type ContextForgeStatus } from "./lib/contextforge";
 import { getAuthToken, clearAuthToken, openSignIn, decodeTokenClaims, isTokenExpired } from "./lib/auth";
 import { buildFeatureSpec, sessionInputFromSpec } from "./lib/featureSpec";
 import {
@@ -92,6 +93,10 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [contextForgeStatus, setContextForgeStatus] = useState<ContextForgeStatus | null>(null);
+  const [isGeneratingContext, setIsGeneratingContext] = useState(false);
+  const [contextForgeError, setContextForgeError] = useState<string | null>(null);
+  const contextForgeSeq = useRef(0);
 
   useEffect(() => {
     void loadAppSettings()
@@ -174,6 +179,11 @@ function App() {
         testCommandCwd: repoState.session.testCommandCwd ?? "",
       }));
       rememberRepo(trimmedRepoPath, repoState.session);
+      setContextForgeError(null);
+      const seq = ++contextForgeSeq.current;
+      void checkContextForgeStatus(trimmedRepoPath)
+        .then((s) => { if (contextForgeSeq.current === seq) setContextForgeStatus(s); })
+        .catch(() => { if (contextForgeSeq.current === seq) setContextForgeStatus(null); });
     } catch (initError) {
       setError(
         friendlyRepoError(
@@ -364,6 +374,20 @@ function App() {
     }
   };
 
+  const handleGenerateContextFiles = async () => {
+    if (!authToken || !state.repoPath) return;
+    setIsGeneratingContext(true);
+    setContextForgeError(null);
+    try {
+      const status = await generateContextFiles(state.repoPath, authToken);
+      setContextForgeStatus(status);
+    } catch (genError) {
+      setContextForgeError(errorMessage(genError, "Failed to generate context files."));
+    } finally {
+      setIsGeneratingContext(false);
+    }
+  };
+
   const handleNavigateHome = () => {
     setError(null);
     goTo("home");
@@ -444,6 +468,11 @@ function App() {
             hasLatestReport={state.report !== null}
             isRunning={isRunning}
             error={error}
+            contextForgeStatus={contextForgeStatus}
+            isGeneratingContext={isGeneratingContext}
+            contextForgeError={contextForgeError}
+            isPro={isPro}
+            onGenerateContextFiles={() => void handleGenerateContextFiles()}
             onSessionChange={(session) =>
               setState((current) => ({ ...current, session }))
             }
