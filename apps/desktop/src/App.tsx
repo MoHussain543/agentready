@@ -115,7 +115,7 @@ function App() {
       void getAuthToken().then((token) => {
         setAuthToken(token);
         setIsSettingsOpen(false);
-        setState((current) => ({ ...current, screen: "home" }));
+        // Preserve current screen — user may be mid-session or mid-results
       });
     });
     return () => { void unlistenPromise.then((fn) => fn()); };
@@ -161,7 +161,7 @@ function App() {
       const repoState = await initRepoStorage(trimmedRepoPath);
       const hydratedSession = repoState.featureSpec
         ? sessionInputFromSpec(repoState.featureSpec)
-        : state.session;
+        : INITIAL_SESSION;
       const history = await loadHistory(trimmedRepoPath);
 
       setState((current) => ({

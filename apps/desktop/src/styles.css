@@ -421,6 +421,12 @@ body {
   margin-top: 0.5rem;
 }
 
+.home-heading-actions {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
 .home-open-btn {
   font-size: 0.82rem;
   padding: 0.3rem 0.8rem;

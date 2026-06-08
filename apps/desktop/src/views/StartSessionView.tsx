@@ -303,8 +303,8 @@ function ContextForgeBanner({
 
 const RUNNING_MESSAGES = [
   "Reading your diff…",
-  "Checking feature alignment…",
-  "Running analysis…",
+  "Running checks…",
+  "Analysing changes…",
   "Almost done…",
 ];
 

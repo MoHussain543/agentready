@@ -33,14 +33,24 @@ export function HomeView({
         <div className="home-recents home-recents-primary">
           <div className="home-section-heading">
             <h2>Recent projects</h2>
-            <button
-              type="button"
-              className="secondary home-open-btn"
-              disabled={isBusy}
-              onClick={onOpenProject}
-            >
-              {isBusy ? "Opening…" : "Open project"}
-            </button>
+            <div className="home-heading-actions">
+              <button
+                type="button"
+                className="secondary home-open-btn"
+                disabled={isBusy}
+                onClick={onBrowseHistory}
+              >
+                History
+              </button>
+              <button
+                type="button"
+                className="secondary home-open-btn"
+                disabled={isBusy}
+                onClick={onOpenProject}
+              >
+                {isBusy ? "Opening…" : "Open project"}
+              </button>
+            </div>
           </div>
           <ul className="recent-projects-list">
             {recentProjects.slice(0, 8).map((project) => (
