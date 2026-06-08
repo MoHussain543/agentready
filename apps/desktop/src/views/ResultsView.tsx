@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FeatureSessionInput, ProReview, ReadinessReport, TestResult } from "../types";
+import type { FeatureSessionInput, Finding, ProReview, ReadinessReport, TestResult } from "../types";
 import { getStagedFiles, gitCommit } from "../lib/git";
 import { generateNarrative, type NarrativeOutput } from "../lib/narrate";
 
@@ -113,6 +113,16 @@ export function ResultsView({
     }
   };
 
+  const findingsByCheckId = new Map<string, Finding[]>();
+  for (const finding of report.findings ?? []) {
+    const list = findingsByCheckId.get(finding.checkId) ?? [];
+    list.push(finding);
+    findingsByCheckId.set(finding.checkId, list);
+  }
+  const orphanFindings = (report.findings ?? []).filter(
+    (f) => !report.checks.some((c) => c.id === f.checkId),
+  );
+
   return (
     <section className="view view-wide results-view">
       <div className={`verdict-hero verdict-hero-${report.verdict.toLowerCase()}`}>
@@ -177,6 +187,162 @@ export function ResultsView({
         </div>
       )}
 
+      <div className="results-overview-layout">
+        <div className="card">
+          <h2>What you asked the AI to build</h2>
+          <p className="request-copy">{session.description}</p>
+        </div>
+
+        <div className="card">
+          <h2>Diff summary</h2>
+          <DiffList label="Added" paths={report.diffSummary.added} />
+          <DiffList label="Modified" paths={report.diffSummary.modified} />
+          <DiffList label="Deleted" paths={report.diffSummary.deleted} />
+          <p className="stat-line">
+            {report.diffSummary.totalFiles} files ·{" "}
+            <strong>{report.diffSummary.totalChangedLines}</strong> changed lines
+          </p>
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>Checks</h2>
+        <ul className="checks-list">
+          {report.checks.map((check) => {
+            const checkFindings = findingsByCheckId.get(check.id) ?? [];
+            return (
+              <li key={check.id}>
+                <span className={`status status-${check.status}`}>
+                  {check.status}
+                </span>
+                <div className="check-body">
+                  <strong>{check.name}</strong>
+                  <p>{check.message}</p>
+                  {check.remediation && (
+                    <p className="remediation">{check.remediation}</p>
+                  )}
+                  {checkFindings.length > 0 && (
+                    <ul className="check-findings">
+                      {checkFindings.map((finding) => (
+                        <li
+                          key={`${finding.checkId}-${finding.message}`}
+                          className={`check-finding-item check-finding-item-${finding.severity}`}
+                        >
+                          <span className={`severity severity-${finding.severity}`}>
+                            {finding.severity}
+                          </span>
+                          <span className="check-finding-detail">
+                            {finding.message}
+                            {finding.paths && finding.paths.length > 0 && (
+                              <span className="paths"> — {finding.paths.join(", ")}</span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        {orphanFindings.length > 0 && (
+          <ul className="findings-list findings-orphan">
+            {orphanFindings.map((finding) => (
+              <li key={`${finding.checkId}-${finding.message}`}>
+                <span className={`severity severity-${finding.severity}`}>
+                  {finding.severity}
+                </span>
+                <strong>{finding.checkId}</strong>: {finding.message}
+                {finding.paths && finding.paths.length > 0 && (
+                  <span className="paths"> ({finding.paths.join(", ")})</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {report.proReview ? (
+        <div className="card pro-review-card">
+          <div className="pro-review-header">
+            <div>
+              <h2>Alignment review</h2>
+              <p className="pro-review-subtitle">
+                Did the agent actually build the right thing?
+              </p>
+            </div>
+            <span className="pro-badge">
+              <LockIcon />
+              Pro
+            </span>
+          </div>
+          {report.proReview.skipped ? (
+            <p className="hint">{report.proReview.skipReason ?? "Alignment review was skipped for this check."}</p>
+          ) : (
+            <ProReviewDetail review={report.proReview} />
+          )}
+        </div>
+      ) : (
+        <div className="card pro-review-card">
+          <div className="pro-review-header">
+            <div>
+              <h2>Alignment review</h2>
+              <p className="pro-review-subtitle">
+                Did the agent actually build the right thing?
+              </p>
+            </div>
+            <span className="pro-badge">
+              <LockIcon />
+              Pro
+            </span>
+          </div>
+          <ul className="pro-review-capabilities">
+            <li>
+              <span className="pro-cap-icon">◆</span>
+              <div>
+                <strong>Feature alignment</strong>
+                <p>Does the diff match what you asked the AI to build?</p>
+              </div>
+            </li>
+            <li>
+              <span className="pro-cap-icon">◆</span>
+              <div>
+                <strong>Unrelated file detection</strong>
+                <p>Changed files that appear outside the feature scope.</p>
+              </div>
+            </li>
+            <li>
+              <span className="pro-cap-icon">◆</span>
+              <div>
+                <strong>Scope creep</strong>
+                <p>Changes that go beyond what was requested.</p>
+              </div>
+            </li>
+            <li>
+              <span className="pro-cap-icon">◆</span>
+              <div>
+                <strong>Misleading UI copy</strong>
+                <p>Text added to the UI that doesn't match the requested feature.</p>
+              </div>
+            </li>
+          </ul>
+          <div className="pro-review-footer">
+            <p className="hint">Upgrade to Pro to unlock AI-powered alignment review.</p>
+            <button type="button" className="secondary" disabled>
+              Upgrade to Pro
+            </button>
+          </div>
+        </div>
+      )}
+
+      {report.testResult && report.testResult.status !== "skip" && (
+        <div className="card">
+          <h2>Tests</h2>
+          <TestResultDetail testResult={report.testResult} />
+        </div>
+      )}
+
       <div className="card">
         <div className="card-header">
           <div>
@@ -191,7 +357,7 @@ export function ResultsView({
             {copied ? "Copied" : "Copy"}
           </button>
         </div>
-        <pre className="repair-prompt">{report.repairPrompt}</pre>
+        <div className="repair-prompt">{report.repairPrompt}</div>
       </div>
 
       <div className="card narrator-card">
@@ -332,143 +498,6 @@ export function ResultsView({
           </div>
         )}
       </div>
-
-      <div className="results-overview-layout">
-        <div className="card">
-          <h2>What you asked the AI to build</h2>
-          <p className="request-copy">{session.description}</p>
-        </div>
-
-        <div className="card">
-          <h2>Diff summary</h2>
-          <DiffList label="Added" paths={report.diffSummary.added} />
-          <DiffList label="Modified" paths={report.diffSummary.modified} />
-          <DiffList label="Deleted" paths={report.diffSummary.deleted} />
-          <p className="stat-line">
-            {report.diffSummary.totalFiles} files ·{" "}
-            <strong>{report.diffSummary.totalChangedLines}</strong> changed lines
-          </p>
-        </div>
-      </div>
-
-      {report.findings && report.findings.length > 0 && (
-        <div className="card">
-          <h2>Findings</h2>
-          <ul className="findings-list">
-            {report.findings.map((finding) => (
-              <li key={`${finding.checkId}-${finding.message}`}>
-                <span className={`severity severity-${finding.severity}`}>
-                  {finding.severity}
-                </span>
-                <strong>{finding.checkId}</strong>: {finding.message}
-                {finding.paths && finding.paths.length > 0 && (
-                  <span className="paths"> ({finding.paths.join(", ")})</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="card">
-        <h2>Checks</h2>
-        <ul className="checks-list">
-          {report.checks.map((check) => (
-            <li key={check.id}>
-              <span className={`status status-${check.status}`}>
-                {check.status}
-              </span>
-              <div>
-                <strong>{check.name}</strong>
-                <p>{check.message}</p>
-                {check.remediation && (
-                  <p className="remediation">{check.remediation}</p>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {report.proReview ? (
-        <div className="card pro-review-card">
-          <div className="pro-review-header">
-            <div>
-              <h2>Alignment review</h2>
-              <p className="pro-review-subtitle">
-                Did the agent actually build the right thing?
-              </p>
-            </div>
-            <span className="pro-badge">
-              <LockIcon />
-              Pro
-            </span>
-          </div>
-          {report.proReview.skipped ? (
-            <p className="hint">{report.proReview.skipReason ?? "Alignment review was skipped for this check."}</p>
-          ) : (
-            <ProReviewDetail review={report.proReview} />
-          )}
-        </div>
-      ) : (
-        <div className="card pro-review-card">
-          <div className="pro-review-header">
-            <div>
-              <h2>Alignment review</h2>
-              <p className="pro-review-subtitle">
-                Did the agent actually build the right thing?
-              </p>
-            </div>
-            <span className="pro-badge">
-              <LockIcon />
-              Pro
-            </span>
-          </div>
-          <ul className="pro-review-capabilities">
-            <li>
-              <span className="pro-cap-icon">◆</span>
-              <div>
-                <strong>Feature alignment</strong>
-                <p>Does the diff match what you asked the AI to build?</p>
-              </div>
-            </li>
-            <li>
-              <span className="pro-cap-icon">◆</span>
-              <div>
-                <strong>Unrelated file detection</strong>
-                <p>Changed files that appear outside the feature scope.</p>
-              </div>
-            </li>
-            <li>
-              <span className="pro-cap-icon">◆</span>
-              <div>
-                <strong>Scope creep</strong>
-                <p>Changes that go beyond what was requested.</p>
-              </div>
-            </li>
-            <li>
-              <span className="pro-cap-icon">◆</span>
-              <div>
-                <strong>Misleading UI copy</strong>
-                <p>Text added to the UI that doesn't match the requested feature.</p>
-              </div>
-            </li>
-          </ul>
-          <div className="pro-review-footer">
-            <p className="hint">Add your Anthropic API key in Settings to enable alignment review.</p>
-            <button type="button" className="secondary" disabled>
-              Add API key in Settings
-            </button>
-          </div>
-        </div>
-      )}
-
-      {report.testResult && report.testResult.status !== "skip" && (
-        <div className="card">
-          <h2>Tests</h2>
-          <TestResultDetail testResult={report.testResult} />
-        </div>
-      )}
 
       <div className="actions">
         <button
@@ -630,7 +659,6 @@ function TestResultDetail({ testResult }: { testResult: TestResult }) {
     );
   }
 
-  // Fallback for any unhandled status variant
   return (
     <p className="test-result-label">
       <span className={`status status-${status}`}>{status}</span>

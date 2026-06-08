@@ -176,6 +176,7 @@ function App() {
         history,
         testCommand: repoState.session.testCommand ?? "",
         testCommandCwd: repoState.session.testCommandCwd ?? "",
+        runTests: !!(repoState.session.testCommand?.trim()),
       }));
       rememberRepo(trimmedRepoPath, repoState.session);
       setContextForgeError(null);
@@ -310,6 +311,7 @@ function App() {
         history,
         testCommand: repoState.session.testCommand ?? "",
         testCommandCwd: repoState.session.testCommandCwd ?? "",
+        runTests: !!(repoState.session.testCommand?.trim()),
       }));
       rememberRepo(project.repoPath, repoState.session);
     } catch (loadError) {
