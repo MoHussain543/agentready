@@ -603,6 +603,7 @@ mod tests {
             passed_checks: None,
             test_result: None,
             repair_prompt: "Repair prompt".to_string(),
+            pro_review: None,
         }
     }
 

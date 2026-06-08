@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FeatureSessionInput, ReadinessReport, TestResult } from "../types";
+import type { FeatureSessionInput, ProReview, ReadinessReport, TestResult } from "../types";
 
 interface ResultsViewProps {
   repoPath: string;
@@ -174,6 +174,79 @@ export function ResultsView({
         </ul>
       </div>
 
+      {report.proReview ? (
+        <div className="card pro-review-card">
+          <div className="pro-review-header">
+            <div>
+              <h2>Alignment review</h2>
+              <p className="pro-review-subtitle">
+                Did the agent actually build the right thing?
+              </p>
+            </div>
+            <span className="pro-badge">
+              <LockIcon />
+              Pro
+            </span>
+          </div>
+          {report.proReview.skipped ? (
+            <p className="hint">{report.proReview.skipReason ?? "Alignment review was skipped for this check."}</p>
+          ) : (
+            <ProReviewDetail review={report.proReview} />
+          )}
+        </div>
+      ) : (
+        <div className="card pro-review-card">
+          <div className="pro-review-header">
+            <div>
+              <h2>Alignment review</h2>
+              <p className="pro-review-subtitle">
+                Did the agent actually build the right thing?
+              </p>
+            </div>
+            <span className="pro-badge">
+              <LockIcon />
+              Pro
+            </span>
+          </div>
+          <ul className="pro-review-capabilities">
+            <li>
+              <span className="pro-cap-icon">◆</span>
+              <div>
+                <strong>Feature alignment</strong>
+                <p>Does the diff match what you asked the AI to build?</p>
+              </div>
+            </li>
+            <li>
+              <span className="pro-cap-icon">◆</span>
+              <div>
+                <strong>Unrelated file detection</strong>
+                <p>Changed files that appear outside the feature scope.</p>
+              </div>
+            </li>
+            <li>
+              <span className="pro-cap-icon">◆</span>
+              <div>
+                <strong>Scope creep</strong>
+                <p>Changes that go beyond what was requested.</p>
+              </div>
+            </li>
+            <li>
+              <span className="pro-cap-icon">◆</span>
+              <div>
+                <strong>Misleading UI copy</strong>
+                <p>Text added to the UI that doesn't match the requested feature.</p>
+              </div>
+            </li>
+          </ul>
+          <div className="pro-review-footer">
+            <p className="hint">Add your Anthropic API key in Settings to enable alignment review.</p>
+            <button type="button" className="secondary" disabled>
+              Add API key in Settings
+            </button>
+          </div>
+        </div>
+      )}
+
       {report.testResult && report.testResult.status !== "skip" && (
         <div className="card">
           <h2>Tests</h2>
@@ -200,6 +273,62 @@ export function ResultsView({
         </button>
       </div>
     </section>
+  );
+}
+
+function ProReviewDetail({ review }: { review: ProReview }) {
+  return (
+    <div className="pro-review-result">
+      <div className="pro-review-verdict">
+        <span className={`pro-aligned-badge pro-aligned-${review.aligned ? "yes" : "no"}`}>
+          {review.aligned ? "Aligned" : "Not aligned"}
+        </span>
+        <span className={`pro-confidence-badge pro-confidence-${review.confidence}`}>
+          {review.confidence} confidence
+        </span>
+      </div>
+      {review.summary && <p className="pro-review-summary">{review.summary}</p>}
+      {review.unrelatedFiles.length > 0 && (
+        <div className="pro-review-section">
+          <h3>Unrelated files</h3>
+          <ul className="pro-review-list">
+            {review.unrelatedFiles.map((f) => (
+              <li key={f}><code>{f}</code></li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {review.scopeCreep.length > 0 && (
+        <div className="pro-review-section">
+          <h3>Scope creep</h3>
+          <ul className="pro-review-list">
+            {review.scopeCreep.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {review.misleadingCopy.length > 0 && (
+        <div className="pro-review-section">
+          <h3>Misleading copy</h3>
+          <ul className="pro-review-list">
+            {review.misleadingCopy.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {review.suggestedFixes.length > 0 && (
+        <div className="pro-review-section">
+          <h3>Suggested fixes</h3>
+          <ul className="pro-review-list">
+            {review.suggestedFixes.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -291,6 +420,15 @@ function TestResultDetail({ testResult }: { testResult: TestResult }) {
       <span className={`status status-${status}`}>{status}</span>
       {message && <> — {message}</>}
     </p>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 12 14" aria-hidden="true" width="11" height="11" fill="currentColor">
+      <rect x="2" y="6" width="8" height="7" rx="1.5" />
+      <path d="M4 6V4a2 2 0 1 1 4 0v2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
   );
 }
 

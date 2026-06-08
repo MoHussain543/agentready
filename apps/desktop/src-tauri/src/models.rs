@@ -73,6 +73,21 @@ pub struct ReadinessReport {
     pub passed_checks: Option<Vec<String>>,
     pub test_result: Option<TestResult>,
     pub repair_prompt: String,
+    pub pro_review: Option<ProReview>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProReview {
+    pub aligned: bool,
+    pub confidence: String,
+    pub summary: String,
+    pub unrelated_files: Vec<String>,
+    pub scope_creep: Vec<String>,
+    pub misleading_copy: Vec<String>,
+    pub suggested_fixes: Vec<String>,
+    pub skipped: Option<bool>,
+    pub skip_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -10,21 +10,30 @@ use crate::models::{EngineError, EngineRequest, EngineResponse, ReadinessReport}
 #[cfg(test)]
 const DEFAULT_CHECK_SUITE: &str = "free-v1-precommit";
 
-pub fn run_readiness(app: &tauri::AppHandle, request: EngineRequest) -> Result<ReadinessReport, String> {
+pub async fn run_readiness(app: &tauri::AppHandle, request: EngineRequest) -> Result<ReadinessReport, String> {
     validate_request(&request)?;
 
-    let response = invoke_engine(app, &request)?;
-    if response.status == "ok" {
+    let app_clone = app.clone();
+    let req_clone = request.clone();
+    let response = tokio::task::spawn_blocking(move || invoke_engine(&app_clone, &req_clone))
+        .await
+        .map_err(|e| format!("Engine task error: {e}"))??;
+
+    let mut report = if response.status == "ok" {
         response.report.ok_or_else(|| {
             "Engine returned ok but no report was present in the response".to_string()
-        })
+        })?
     } else {
         let error = response.error.unwrap_or(EngineError {
             code: "INTERNAL".to_string(),
             message: "Engine returned error status without details".to_string(),
         });
-        Err(format!("{}: {}", error.code, error.message))
-    }
+        return Err(format!("{}: {}", error.code, error.message));
+    };
+
+    crate::pro_review::run_if_eligible(&request, &mut report).await;
+
+    Ok(report)
 }
 
 fn validate_request(request: &EngineRequest) -> Result<(), String> {

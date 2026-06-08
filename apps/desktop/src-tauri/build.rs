@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 fn main() {
+    println!("cargo:rerun-if-env-changed=AGENTREADY_TOKEN");
     stage_engine_jar();
     tauri_build::build()
 }

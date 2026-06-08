@@ -1,5 +1,6 @@
 mod engine;
 mod models;
+mod pro_review;
 mod settings;
 mod storage;
 
@@ -8,8 +9,8 @@ use settings::AppSettings;
 use storage::{CurrentSession, ReportHistoryEntry, RepoSessionState};
 
 #[tauri::command]
-fn run_readiness(app: tauri::AppHandle, request: EngineRequest) -> Result<ReadinessReport, String> {
-    engine::run_readiness(&app, request)
+async fn run_readiness(app: tauri::AppHandle, request: EngineRequest) -> Result<ReadinessReport, String> {
+    engine::run_readiness(&app, request).await
 }
 
 #[tauri::command]

@@ -69,6 +69,18 @@ export interface GitContext {
   unstagedFileCount?: number;
 }
 
+export interface ProReview {
+  aligned: boolean;
+  confidence: "high" | "medium" | "low";
+  summary: string;
+  unrelatedFiles: string[];
+  scopeCreep: string[];
+  misleadingCopy: string[];
+  suggestedFixes: string[];
+  skipped?: boolean;
+  skipReason?: string;
+}
+
 export interface ReadinessReport {
   schemaVersion: "1.0";
   generatedAt: string;
@@ -88,6 +100,7 @@ export interface ReadinessReport {
   passedChecks?: string[];
   testResult?: TestResult;
   repairPrompt: string;
+  proReview?: ProReview;
 }
 
 export type AppScreen = "home" | "session" | "results" | "reports";
