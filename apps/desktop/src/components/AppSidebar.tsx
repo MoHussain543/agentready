@@ -49,7 +49,7 @@ export function AppSidebar({
         </button>
         <button
           type="button"
-          className={`sidebar-nav-item${section === "reports" ? " active" : ""}`}
+          className={`sidebar-nav-item sidebar-nav-secondary${section === "reports" ? " active" : ""}`}
           aria-label="Reports"
           title="Reports"
           onClick={onNavigateReports}

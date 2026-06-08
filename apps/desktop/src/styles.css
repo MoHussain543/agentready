@@ -127,6 +127,15 @@ body {
   box-shadow: none;
 }
 
+.sidebar-nav-secondary {
+  opacity: 0.55;
+}
+
+.sidebar-nav-secondary:hover:not(:disabled),
+.sidebar-nav-secondary.active {
+  opacity: 1;
+}
+
 .sidebar-account-btn {
   position: relative;
 }
