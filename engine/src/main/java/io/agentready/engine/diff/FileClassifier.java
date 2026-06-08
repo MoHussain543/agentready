@@ -35,7 +35,7 @@ public final class FileClassifier {
 
     private static final Set<String> RISKY_TERMS = Set.of(
             "auth", "login", "password", "secret", "credential", "token", "security",
-            "oauth", "session", "crypto", "jwt", "permission", "payment", "billing", "admin");
+            "oauth", "crypto", "jwt", "permission", "payment", "billing", "admin");
 
     /** Returns the single most relevant category for a path. */
     public FileCategory classify(String path) {

@@ -119,7 +119,7 @@ export function ResultsView({
 
       <div className="results-overview-layout">
         <div className="card">
-          <h2>Original request</h2>
+          <h2>What you asked the AI to build</h2>
           <p className="request-copy">{session.description}</p>
         </div>
 
@@ -225,7 +225,7 @@ function TestResultDetail({ testResult }: { testResult: TestResult }) {
           <span className="status status-warn">No test command configured</span>
         </p>
         <p className="hint">
-          Add a test command on the session screen to run tests with future checks.
+          Add a test command on the check screen to run tests with future checks.
         </p>
       </>
     );

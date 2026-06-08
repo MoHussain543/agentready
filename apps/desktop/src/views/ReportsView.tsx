@@ -98,14 +98,6 @@ export function ReportsView({
                 <h2>{selectedProject.repoName}</h2>
                 <p className="meta">{selectedProject.repoPath}</p>
               </div>
-              <button
-                type="button"
-                className="secondary"
-                disabled={isBusy}
-                onClick={onBackToProjects}
-              >
-                All projects
-              </button>
             </div>
 
             {reports.length === 0 ? (
@@ -167,7 +159,12 @@ export function ReportsView({
       </div>
 
       <div className="actions">
-        <button type="button" className="secondary" disabled={isBusy} onClick={onBackHome}>
+        <button
+          type="button"
+          className="secondary"
+          disabled={isBusy}
+          onClick={selectedProject ? onBackToProjects : onBackHome}
+        >
           Back
         </button>
       </div>

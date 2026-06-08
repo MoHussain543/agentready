@@ -500,7 +500,6 @@ class ReadinessRunnerTest {
 
         ReadinessReport report = new ReadinessRunner(git).handle(request("/tmp/repo", null)).report();
 
-        assertEquals(CheckStatus.skip, check(report, "spec-keyword-match").status());
         assertEquals(CheckStatus.skip, check(report, "status-code-match").status());
         assertEquals(CheckStatus.skip, check(report, "risk-keyword-presence").status());
     }
@@ -534,44 +533,6 @@ class ReadinessRunnerTest {
         assertTrue(report.findings().stream()
                 .anyMatch(f -> f.checkId().equals("status-code-match")
                         && f.message().contains("410")));
-    }
-
-    @Test
-    void keywordCoverageStrongPasses() {
-        FakeGitService git = new FakeGitService();
-        git.files = List.of(new ChangedFile("src/checkout/PaymentCart.java", ChangeType.MODIFIED));
-        FeatureSpec spec = spec(List.of("checkout", "payment", "cart"), List.of(), List.of());
-
-        ReadinessReport report =
-                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
-
-        assertEquals(CheckStatus.pass, check(report, "spec-keyword-match").status());
-        assertTrue(report.passedChecks().contains("spec-keyword-match"));
-    }
-
-    @Test
-    void keywordCoveragePartialWarns() {
-        FakeGitService git = new FakeGitService();
-        git.files = List.of(new ChangedFile("src/checkout/Handler.java", ChangeType.MODIFIED));
-        FeatureSpec spec = spec(List.of("checkout", "refund", "invoice"), List.of(), List.of());
-
-        ReadinessReport report =
-                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
-
-        assertEquals(CheckStatus.warn, check(report, "spec-keyword-match").status());
-    }
-
-    @Test
-    void keywordCoverageAbsentFromStrongSpecFails() {
-        FakeGitService git = new FakeGitService();
-        git.files = List.of(new ChangedFile("src/App.java", ChangeType.MODIFIED));
-        FeatureSpec spec = spec(List.of("alpha", "beta", "gamma"), List.of(), List.of());
-
-        ReadinessReport report =
-                new ReadinessRunner(git).handle(request("/tmp/repo", null, spec)).report();
-
-        assertEquals(CheckStatus.fail, check(report, "spec-keyword-match").status());
-        assertEquals(Verdict.NOT_READY, report.verdict());
     }
 
     @Test

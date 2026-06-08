@@ -21,7 +21,6 @@ public final class RuleEngine {
                 new PlaceholderContentRule(),
                 new HardcodedSecretsRule(),
                 new FeatureAlignmentDriftRule(),
-                new SpecKeywordMatchRule(),
                 new StatusCodeMatchRule(),
                 new RiskKeywordPresenceRule());
     }

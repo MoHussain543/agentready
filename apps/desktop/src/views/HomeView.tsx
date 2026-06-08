@@ -76,7 +76,7 @@ export function HomeView({
             </span>
             <span className="home-action-copy">
               <strong>{isBusy ? "Opening..." : "Open project"}</strong>
-              <span>Choose a local git repository and start a verification session.</span>
+              <span>Choose a local git repository and run a pre-commit check.</span>
             </span>
           </button>
           <button

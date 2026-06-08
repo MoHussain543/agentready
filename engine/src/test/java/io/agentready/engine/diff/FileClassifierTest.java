@@ -78,6 +78,12 @@ class FileClassifierTest {
     }
 
     @Test
+    void doesNotTreatGenericSessionUiFilesAsRisky() {
+        assertFalse(classifier.isRiskyPath("apps/desktop/src/views/StartSessionView.tsx"));
+        assertTrue(classifier.isRiskyPath("src/auth/session_store.go"));
+    }
+
+    @Test
     void classifyReturnsPrimaryCategory() {
         assertEquals(FileCategory.TEST, classifier.classify("src/UserTest.java"));
         assertEquals(FileCategory.DEPENDENCY, classifier.classify("package.json"));

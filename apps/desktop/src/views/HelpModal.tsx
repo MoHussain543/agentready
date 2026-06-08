@@ -38,7 +38,7 @@ export function HelpModal({ onClose }: HelpModalProps) {
           <ol className="modal-list">
             <li>Open a local git repository.</li>
             <li>Describe what you asked the AI to build.</li>
-            <li>Run a readiness check and review the verdict.</li>
+            <li>Run a pre-commit check and review the verdict.</li>
           </ol>
         </div>
 

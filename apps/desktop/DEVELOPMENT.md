@@ -13,8 +13,9 @@ java -jar <agentready-engine.jar>   # JSON request on stdin, JSON response on st
 Runtime resolution order (`engine.rs`):
 
 1. `AGENTREADY_ENGINE_JAR` — absolute path to the fat JAR; use this for CI or custom layouts.
-2. Tauri resource directory — where the JAR is bundled in a packaged app (populated by `bundle.resources` in `tauri.conf.json`).
-3. `engine/target/agentready-engine.jar` relative to `CARGO_MANIFEST_DIR` — **dev-only**; this path is baked in at compile time and will not resolve on other machines.
+2. `engine/target/agentready-engine.jar` relative to `CARGO_MANIFEST_DIR` when running a debug/dev build — this keeps `tauri dev` pointed at the latest local engine build.
+3. Tauri resource directory — where the JAR is bundled in a packaged app (populated by `bundle.resources` in `tauri.conf.json`).
+4. `engine/target/agentready-engine.jar` relative to `CARGO_MANIFEST_DIR` as a final local fallback.
 
 Build the engine before running the desktop app:
 

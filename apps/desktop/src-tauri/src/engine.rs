@@ -95,7 +95,15 @@ pub fn resolve_engine_jar(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         return ensure_jar_exists(&PathBuf::from(&path), "AGENTREADY_ENGINE_JAR");
     }
 
-    // 2. Tauri resource dir — the canonical location in a packaged build.
+    let dev_jar = dev_engine_jar_path();
+
+    // 2. In `tauri dev`, prefer the live engine build output so desktop runs
+    // the latest engine code instead of a previously staged resource copy.
+    if cfg!(debug_assertions) && dev_jar.exists() {
+        return Ok(dev_jar);
+    }
+
+    // 3. Tauri resource dir — the canonical location in a packaged build.
     //    The JAR is declared as a bundle resource in tauri.conf.json and staged
     //    into src-tauri/resources/ as part of the release build step.
     if let Ok(resource_dir) = app.path().resource_dir() {
@@ -105,11 +113,9 @@ pub fn resolve_engine_jar(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         }
     }
 
-    // 3. Source-tree dev fallback — works when `tauri dev` is run from the
+    // 4. Source-tree dev fallback — works when `tauri dev` is run from the
     //    monorepo checkout. CARGO_MANIFEST_DIR is baked in at compile time and
     //    will not resolve on other machines, so this is dev-only.
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let dev_jar = manifest_dir.join("../../../engine/target/agentready-engine.jar");
     if dev_jar.exists() {
         return Ok(dev_jar);
     }
@@ -122,6 +128,11 @@ pub fn resolve_engine_jar(app: &tauri::AppHandle) -> Result<PathBuf, String> {
          Set AGENTREADY_ENGINE_JAR to override the path."
             .to_string(),
     )
+}
+
+fn dev_engine_jar_path() -> PathBuf {
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    manifest_dir.join("../../../engine/target/agentready-engine.jar")
 }
 
 fn resolve_java_binary(app: &tauri::AppHandle) -> String {

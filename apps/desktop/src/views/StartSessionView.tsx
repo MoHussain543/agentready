@@ -44,10 +44,7 @@ export function StartSessionView({
   const lastRunAt = latestSession?.lastReadinessRunAt ?? null;
   const isFirstRun = !latestVerdict && !lastRunAt;
   const isNoDiff = error?.includes("No uncommitted changes to check yet");
-  const canRun =
-    session.title.trim().length > 0 &&
-    session.description.trim().length > 0 &&
-    !isRunning;
+  const canRun = session.description.trim().length > 0 && !isRunning;
 
   const testCommandMissing = runTests && testCommand.trim().length === 0;
   const normalizedTestCwd = testCommandCwd.trim().replace(/^\.\/+/, "");
@@ -62,14 +59,14 @@ export function StartSessionView({
   return (
     <section className="view session-view">
       <header className="view-header">
-        <p className="eyebrow">Feature session</p>
-        <h1>Start feature session</h1>
+        <p className="eyebrow">Pre-commit check</p>
+        <h1>Check your diff</h1>
         <p className="repo-path">{repoPath}</p>
       </header>
 
       {error && !isNoDiff && (
         <div className="error-banner" role="alert">
-          <strong>Could not run readiness check</strong>
+          <strong>Could not run check</strong>
           <p>{error}</p>
         </div>
       )}
@@ -78,14 +75,14 @@ export function StartSessionView({
         <div className="nodiff-notice" role="status">
           <strong>No uncommitted changes detected</strong>
           <p>
-            AgentReady analyzes your git diff. Make changes with your AI agent first, then come back and run a check.
+            AgentReady scans your uncommitted changes. Make some changes with your AI agent first, then come back and run a check.
           </p>
         </div>
       )}
 
       {isFirstRun && !error && (
         <p className="first-run-notice">
-          No checks have been run for this repository yet. Fill in what you asked the AI to build, then run a readiness check.
+          No checks have been run for this repository yet. Describe what you asked the AI to build, then run a pre-commit check.
         </p>
       )}
 
@@ -116,34 +113,21 @@ export function StartSessionView({
       )}
 
       <div className="card">
-        <h2>What did you ask the AI to build?</h2>
+        <h2>What are you building?</h2>
         <p className="hint">
-          Describe what you asked your AI agent to build.
+          Used to generate the repair prompt and, in Pro, to verify feature alignment.
         </p>
-
         <label className="field">
-          <span>Feature title</span>
-          <input
-            type="text"
-            value={session.title}
-            placeholder="Return 404 for missing users"
-            disabled={isRunning}
-            onChange={(e) =>
-              onSessionChange({ ...session, title: e.target.value })
-            }
-          />
-        </label>
-
-        <label className="field">
-          <span>Feature description</span>
           <textarea
-            rows={5}
+            rows={6}
             value={session.description}
-            placeholder="API should return 404 when user id is not found..."
+            placeholder="Describe what you asked the AI to build — e.g. add a 404 response for missing users in the API"
             disabled={isRunning}
-            onChange={(e) =>
-              onSessionChange({ ...session, description: e.target.value })
-            }
+            onChange={(e) => {
+              const value = e.target.value;
+              const title = value.split("\n")[0].slice(0, 120) || value.slice(0, 120);
+              onSessionChange({ ...session, title, description: value });
+            }}
           />
         </label>
       </div>
