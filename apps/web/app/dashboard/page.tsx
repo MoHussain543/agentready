@@ -1,7 +1,17 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { supabaseAdmin } from "@/lib/supabase";
 import { UpgradeButton } from "@/components/UpgradeButton";
+
+async function getSubscription(clerkUserId: string) {
+  const { data } = await supabaseAdmin
+    .from("subscriptions")
+    .select("status")
+    .eq("clerk_user_id", clerkUserId)
+    .single();
+  return data?.status ?? "free";
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -10,6 +20,9 @@ export default async function DashboardPage({
 }) {
   const user = await currentUser();
   const { upgraded } = await searchParams;
+
+  const status = user ? await getSubscription(user.id) : "free";
+  const isPro = status === "pro";
 
   return (
     <div className="min-h-screen bg-[#09090d] text-[#edf2ff]">
@@ -25,7 +38,7 @@ export default async function DashboardPage({
 
         {upgraded === "true" && (
           <div className="mb-8 p-4 rounded-xl border border-emerald-500/25 bg-emerald-500/5 text-emerald-400 text-sm font-medium">
-            🎉 Welcome to Pro! Alignment review is now active on every check.
+            Welcome to Pro! Alignment review is now active on every check.
           </div>
         )}
 
@@ -52,17 +65,25 @@ export default async function DashboardPage({
             </button>
           </div>
 
-          <div className="p-6 rounded-2xl border border-brand-600/25 bg-brand-600/3">
+          <div className={`p-6 rounded-2xl border ${isPro ? "border-emerald-500/25 bg-emerald-500/3" : "border-brand-600/25 bg-brand-600/3"}`}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-semibold text-white mb-1">Pro plan</h2>
+                <h2 className="font-semibold text-white mb-1">
+                  {isPro ? "Pro plan" : "Upgrade to Pro"}
+                </h2>
                 <p className="text-sm text-[#9aa5c4] mb-4">
-                  Unlock AI alignment review on every check. Cancel any time.
+                  {isPro
+                    ? "AI alignment review is active on every check you run."
+                    : "Unlock AI alignment review on every check. Cancel any time."}
                 </p>
-                <UpgradeButton />
+                {!isPro && <UpgradeButton />}
               </div>
-              <span className="flex-shrink-0 px-3 py-1 rounded-full bg-brand-600/15 border border-brand-600/30 text-brand-400 text-xs font-bold">
-                FREE
+              <span className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-bold border ${
+                isPro
+                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                  : "bg-brand-600/15 border-brand-600/30 text-brand-400"
+              }`}>
+                {isPro ? "PRO" : "FREE"}
               </span>
             </div>
           </div>

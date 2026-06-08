@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { supabaseAdmin } from "@/lib/supabase";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -24,14 +25,26 @@ export async function POST(req: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       const clerkUserId = session.metadata?.clerkUserId;
       const customerId = session.customer as string;
-      console.log(`[webhook] New Pro subscriber: clerkUserId=${clerkUserId} stripeCustomer=${customerId}`);
-      // TODO: persist subscription status to database
+      const subscriptionId = session.subscription as string;
+
+      if (clerkUserId) {
+        await supabaseAdmin.from("subscriptions").upsert({
+          clerk_user_id: clerkUserId,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          status: "pro",
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "clerk_user_id" });
+      }
       break;
     }
+
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
-      console.log(`[webhook] Subscription cancelled: ${sub.id}`);
-      // TODO: revoke Pro access in database
+      await supabaseAdmin
+        .from("subscriptions")
+        .update({ status: "free", updated_at: new Date().toISOString() })
+        .eq("stripe_subscription_id", sub.id);
       break;
     }
   }
