@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FeatureSessionInput, Finding, ProReview, ReadinessReport, TestResult } from "../types";
 import { getStagedFiles, gitCommit } from "../lib/git";
 import { generateNarrative, type NarrativeOutput } from "../lib/narrate";
+import { getValidToken } from "../lib/auth";
 
 interface ResultsViewProps {
   repoPath: string;
@@ -51,10 +52,10 @@ export function ResultsView({
   const [diffExpanded, setDiffExpanded] = useState(report.diffSummary.totalFiles <= 5);
 
   const handleGenerateNarrative = async () => {
-    if (!authToken) return;
     setIsGenerating(true);
     setNarrativeError(null);
     try {
+      const token = await getValidToken();
       const result = await generateNarrative({
         featureTitle: session.title || "Untitled feature",
         featureDescription: session.description,
@@ -62,15 +63,17 @@ export function ResultsView({
         diffSummary: report.diffSummary,
         testResult: report.testResult,
         proReview: report.proReview,
-        userToken: authToken,
+        userToken: token,
       });
       setNarrative(result);
     } catch (err) {
       const raw = err instanceof Error ? err.message : String(err);
       setNarrativeError(
-        raw.includes("Command generate_narrative not found")
-          ? "Commit generation requires a fresh build — restart the app to enable GitNarrator."
-          : raw,
+        raw === "SESSION_EXPIRED"
+          ? "Session expired. Open Settings to sign in again."
+          : raw.includes("Command generate_narrative not found")
+            ? "Commit generation requires a fresh build — restart the app to enable GitNarrator."
+            : raw,
       );
     } finally {
       setIsGenerating(false);

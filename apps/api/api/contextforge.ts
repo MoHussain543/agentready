@@ -65,14 +65,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(403).json({ error: "ContextForge requires a Pro subscription." });
   }
 
-  if (ratelimit) {
-    const { success } = await ratelimit.limit(`contextforge:${userClaims.sub}`);
-    if (!success) return res.status(429).json({ error: "Too many requests. Try again in an hour." });
+  if (!ratelimit) {
+    return res.status(500).json({ error: "Service not configured" });
   }
+  const { success } = await ratelimit.limit(`contextforge:${userClaims.sub}`);
+  if (!success) return res.status(429).json({ error: "Too many requests. Try again in an hour." });
 
   const body = req.body as ContextForgeRequest;
   if (!body?.projectName || !Array.isArray(body?.languages)) {
     return res.status(400).json({ error: "Missing projectName or languages" });
+  }
+  if (body.projectName.length > 100) {
+    return res.status(400).json({ error: "projectName exceeds maximum length" });
+  }
+  const MAX_ARRAY_ITEMS = 20;
+  const MAX_ITEM_LENGTH = 50;
+  const arrayFields = [body.languages, body.frameworks, body.buildTools, body.databases, body.testFrameworks];
+  if (arrayFields.some(a => Array.isArray(a) && (a.length > MAX_ARRAY_ITEMS || a.some((v: unknown) => typeof v === "string" && v.length > MAX_ITEM_LENGTH)))) {
+    return res.status(400).json({ error: "Stack fields exceed maximum size" });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;

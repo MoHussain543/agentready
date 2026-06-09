@@ -71,17 +71,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Rate limit by user ID — 20 reviews per hour per subscriber
-  if (ratelimit) {
-    const { success } = await ratelimit.limit(userClaims.sub);
-    if (!success) {
-      return res.status(429).json({ error: "Too many requests. Try again in an hour." });
-    }
+  if (!ratelimit) {
+    return res.status(500).json({ error: "Service not configured" });
+  }
+  const { success } = await ratelimit.limit(userClaims.sub);
+  if (!success) {
+    return res.status(429).json({ error: "Too many requests. Try again in an hour." });
   }
 
   const body = req.body as ReviewRequest;
 
   if (!body?.featureRequest || !Array.isArray(body?.changedFiles)) {
     return res.status(400).json({ error: "Missing featureRequest or changedFiles" });
+  }
+  if (body.featureRequest.length > 2000) {
+    return res.status(400).json({ error: "featureRequest exceeds maximum length" });
   }
 
   if (body.changedFiles.length > MAX_FILES || body.totalChangedLines > MAX_LINES) {

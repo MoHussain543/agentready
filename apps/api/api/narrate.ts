@@ -66,16 +66,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: "Invalid or expired session. Sign in again." });
   }
 
-  if (ratelimit) {
-    const { success } = await ratelimit.limit(`narrate:${userClaims.sub}`);
-    if (!success) {
-      return res.status(429).json({ error: "Too many requests. Try again in an hour." });
-    }
+  if (!ratelimit) {
+    return res.status(500).json({ error: "Service not configured" });
+  }
+  const { success } = await ratelimit.limit(`narrate:${userClaims.sub}`);
+  if (!success) {
+    return res.status(429).json({ error: "Too many requests. Try again in an hour." });
   }
 
   const body = req.body as NarrateRequest;
   if (!body?.featureTitle || !body?.featureDescription) {
     return res.status(400).json({ error: "Missing featureTitle or featureDescription" });
+  }
+  if (body.featureTitle.length > 200 || body.featureDescription.length > 2000) {
+    return res.status(400).json({ error: "featureTitle or featureDescription exceeds maximum length" });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;

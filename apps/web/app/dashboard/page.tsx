@@ -5,11 +5,14 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { UpgradeButton } from "@/components/UpgradeButton";
 
 async function getSubscription(clerkUserId: string) {
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("subscriptions")
     .select("status")
     .eq("clerk_user_id", clerkUserId)
     .single();
+  if (error && error.code !== "PGRST116") {
+    throw new Error("Failed to load subscription status");
+  }
   return data?.status ?? "free";
 }
 

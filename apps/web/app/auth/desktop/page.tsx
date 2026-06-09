@@ -7,11 +7,16 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { DesktopAuthRedirect } from "./DesktopAuthRedirect";
 
 async function mintDesktopToken(clerkUserId: string): Promise<string> {
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("subscriptions")
     .select("status")
     .eq("clerk_user_id", clerkUserId)
     .single();
+
+  // PGRST116 = no row found — valid for free users with no subscription record
+  if (error && error.code !== "PGRST116") {
+    throw new Error("Failed to verify subscription status");
+  }
 
   const isPro = data?.status === "pro";
 
@@ -26,6 +31,13 @@ async function mintDesktopToken(clerkUserId: string): Promise<string> {
 async function createAuthCode(token: string): Promise<string> {
   const code = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+  // Prune expired codes on every sign-in so abandoned codes don't accumulate
+  await supabaseAdmin
+    .from("desktop_auth_codes")
+    .delete()
+    .lt("expires_at", new Date().toISOString());
+
   const { error } = await supabaseAdmin
     .from("desktop_auth_codes")
     .insert({ code, token, expires_at: expiresAt });

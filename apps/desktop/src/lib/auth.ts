@@ -36,3 +36,11 @@ export function decodeTokenClaims(token: string): TokenClaims | null {
 export function isTokenExpired(claims: TokenClaims): boolean {
   return Date.now() / 1000 > claims.exp;
 }
+
+export async function getValidToken(): Promise<string> {
+  const token = await getAuthToken();
+  if (!token) throw new Error("SESSION_EXPIRED");
+  const claims = decodeTokenClaims(token);
+  if (!claims || isTokenExpired(claims)) throw new Error("SESSION_EXPIRED");
+  return token;
+}

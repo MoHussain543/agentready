@@ -228,7 +228,17 @@ async fn open_sign_in(app: tauri::AppHandle) -> Result<(), String> {
                  <h2>Sign-in failed.</h2><p>Please try again.</p>\
                  </body></html>";
 
-        let (status, body) = if code.is_some() { ("200 OK", success_html) } else { ("400 Bad Request", fail_html) };
+        // Exchange the code and persist the token before responding to the
+        // browser — success HTML is only sent if both steps succeed.
+        let saved = match code {
+            None => false,
+            Some(c) => match exchange_code_for_token(&c).await {
+                Err(e) => { eprintln!("[auth] Code exchange failed: {e}"); false }
+                Ok(token) => auth::save_token(&app, token.clone()).is_ok(),
+            },
+        };
+
+        let (status, body) = if saved { ("200 OK", success_html) } else { ("400 Bad Request", fail_html) };
         let response = format!(
             "HTTP/1.1 {status}\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{body}",
             body.len()
@@ -236,15 +246,8 @@ async fn open_sign_in(app: tauri::AppHandle) -> Result<(), String> {
         let _ = stream.write_all(response.as_bytes()).await;
         drop(stream);
 
-        if let Some(c) = code {
-            match exchange_code_for_token(&c).await {
-                Ok(token) => {
-                    if auth::save_token(&app, token).is_ok() {
-                        let _ = app.emit("auth-token-saved", ());
-                    }
-                }
-                Err(e) => eprintln!("[auth] Code exchange failed: {e}"),
-            }
+        if saved {
+            let _ = app.emit("auth-token-saved", ());
         }
     });
 

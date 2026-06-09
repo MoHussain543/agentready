@@ -4,7 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 
 import { loadAppSettings, saveAppSettings, type AppSettings } from "./lib/appSettings";
 import { checkContextForgeStatus, generateContextFiles, type ContextForgeStatus } from "./lib/contextforge";
-import { getAuthToken, clearAuthToken, openSignIn, decodeTokenClaims, isTokenExpired } from "./lib/auth";
+import { getAuthToken, clearAuthToken, openSignIn, decodeTokenClaims, isTokenExpired, getValidToken } from "./lib/auth";
 import { buildFeatureSpec, sessionInputFromSpec } from "./lib/featureSpec";
 import {
   loadRecentProjects,
@@ -376,14 +376,20 @@ function App() {
   };
 
   const handleGenerateContextFiles = async () => {
-    if (!authToken || !state.repoPath) return;
+    if (!state.repoPath) return;
     setIsGeneratingContext(true);
     setContextForgeError(null);
     try {
-      const status = await generateContextFiles(state.repoPath, authToken);
+      const token = await getValidToken();
+      const status = await generateContextFiles(state.repoPath, token);
       setContextForgeStatus(status);
     } catch (genError) {
-      setContextForgeError(errorMessage(genError, "Failed to generate context files."));
+      const msg = errorMessage(genError, "Failed to generate context files.");
+      setContextForgeError(
+        msg === "SESSION_EXPIRED"
+          ? "Session expired. Open Settings to sign in again."
+          : msg,
+      );
     } finally {
       setIsGeneratingContext(false);
     }
