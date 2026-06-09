@@ -2,7 +2,6 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import Anthropic from "@anthropic-ai/sdk";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
-import { jwtVerify } from "jose";
 
 const MODEL = "claude-haiku-4-5-20251001";
 
@@ -33,6 +32,13 @@ interface ReviewResponse {
   suggestedFixes: string[];
 }
 
+async function verifyUserToken(userToken: string, jwtSecret: string) {
+  const { jwtVerify } = await import("jose");
+  const secret = new TextEncoder().encode(jwtSecret);
+  const { payload } = await jwtVerify(userToken, secret);
+  return payload as { sub: string; pro: boolean };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -56,9 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   let userClaims: { sub: string; pro: boolean };
   try {
-    const secret = new TextEncoder().encode(jwtSecret);
-    const { payload } = await jwtVerify(userToken, secret);
-    userClaims = payload as { sub: string; pro: boolean };
+    userClaims = await verifyUserToken(userToken, jwtSecret);
   } catch {
     return res.status(401).json({ error: "Invalid or expired session. Sign in again." });
   }
