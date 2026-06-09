@@ -50,14 +50,17 @@ export default async function DesktopAuthPage({
 }: {
   searchParams: Promise<{ callback?: string }>;
 }) {
+  const { callback } = await searchParams;
   const user = await currentUser();
   if (!user) {
-    redirect("/sign-in?redirect_url=/auth/desktop");
+    const redirectTarget = callback
+      ? `/auth/desktop?callback=${encodeURIComponent(callback)}`
+      : "/auth/desktop";
+    redirect(`/sign-in?redirect_url=${encodeURIComponent(redirectTarget)}`);
   }
 
   const token = await mintDesktopToken(user.id);
   const code = await createAuthCode(token);
-  const { callback } = await searchParams;
 
   if (callback) {
     let callbackUrl: URL;

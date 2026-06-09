@@ -1,3 +1,4 @@
+import homeLogo from "../assets/agentready-glyph.png";
 import { VerdictBadge } from "../components/VerdictBadge";
 import type { RecentProjectEntry } from "../lib/recentProjects";
 
@@ -5,8 +6,11 @@ interface HomeViewProps {
   recentProjects: RecentProjectEntry[];
   isBusy: boolean;
   error: string | null;
+  isSignedIn: boolean;
+  isPro: boolean;
   onOpenProject: () => void;
   onBrowseHistory: () => void;
+  onOpenPro: () => void;
   onOpenRecentProject: (repoPath: string) => void;
 }
 
@@ -14,11 +18,21 @@ export function HomeView({
   recentProjects,
   isBusy,
   error,
+  isSignedIn,
+  isPro,
   onOpenProject,
   onBrowseHistory,
+  onOpenPro,
   onOpenRecentProject,
 }: HomeViewProps) {
   const hasRecents = recentProjects.length > 0;
+  const proTitle = isPro ? "Pro review" : "Unlock Pro";
+  const proSubtitle = isPro
+    ? "Alignment review, ContextForge, and GitNarrator are active on this account."
+    : isSignedIn
+      ? "AI alignment review, ContextForge, and GitNarrator. Open your account to upgrade."
+      : "AI alignment review, ContextForge, and GitNarrator. Sign in to unlock Pro.";
+  const proBadge = isPro ? "PRO" : "Locked";
 
   return (
     <section className="view home-view">
@@ -29,15 +43,16 @@ export function HomeView({
         </div>
       )}
 
-      {!hasRecents && (
-        <header className="home-header">
-          <p className="eyebrow">Home</p>
-          <h1>Choose what to do next</h1>
+      <header className="home-hero">
+        <img src={homeLogo} alt="AgentReady" className="home-logo" />
+        <div className="home-header">
+          <p className="eyebrow">AgentReady</p>
+          <h1>Catch risky AI code before you commit.</h1>
           <p className="subtitle">
-            Open a local git repository to run a check, or jump into your saved report history.
+            Run a local readiness check, revisit saved reports, or unlock Pro for alignment review and agent workflow tools.
           </p>
-        </header>
-      )}
+        </div>
+      </header>
 
       <div className="home-actions">
         <button
@@ -66,6 +81,25 @@ export function HomeView({
           <span className="home-action-copy">
             <strong>History</strong>
             <span>Browse saved reports from projects you have already checked.</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="home-action-card home-action-pro"
+          disabled={isBusy}
+          onClick={onOpenPro}
+        >
+          <span className="home-action-icon">
+            <SparkIcon />
+          </span>
+          <span className="home-action-copy">
+            <span className="home-action-topline">
+              <strong>{proTitle}</strong>
+              <span className={`home-action-badge ${isPro ? "home-action-badge-pro" : "home-action-badge-locked"}`}>
+                {proBadge}
+              </span>
+            </span>
+            <span>{proSubtitle}</span>
           </span>
         </button>
       </div>
@@ -164,6 +198,27 @@ function HistoryIcon() {
         stroke="currentColor"
         strokeWidth="1.2"
         strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SparkIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 1.8 9.16 5l3.06 1.14L9.16 7.3 8 10.5 6.84 7.3 3.78 6.14 6.84 5z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.15"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m12 9.6.54 1.48 1.46.55-1.46.55L12 13.65l-.54-1.47-1.46-.55 1.46-.55z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.05"
         strokeLinejoin="round"
       />
     </svg>

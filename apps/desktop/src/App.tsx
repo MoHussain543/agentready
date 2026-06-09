@@ -427,8 +427,17 @@ function App() {
             recentProjects={recentProjects}
             isBusy={isBusy}
             error={error}
+            isSignedIn={isSignedIn}
+            isPro={isPro}
             onOpenProject={handleOpenProject}
             onBrowseHistory={handleBrowseProjectsWithReports}
+            onOpenPro={() => {
+              if (isSignedIn) {
+                setIsSettingsOpen(true);
+              } else {
+                void handleSignIn();
+              }
+            }}
             onOpenRecentProject={(repoPath) => void openRepo(repoPath)}
           />
         )}

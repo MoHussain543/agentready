@@ -268,21 +268,39 @@ body {
 }
 
 .home-view {
-  max-width: 46rem;
+  max-width: 58rem;
 }
 
 .home-hero {
-  padding: 1.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3.2rem 0 0.25rem;
+}
+
+.home-logo {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 14px 30px rgba(53, 68, 170, 0.22))
+    drop-shadow(0 0 24px rgba(139, 92, 246, 0.22));
 }
 
 .home-header {
-  text-align: left;
+  text-align: center;
+  max-width: 40rem;
+}
+
+.home-header h1 {
+  margin-bottom: 0.55rem;
 }
 
 .home-header .subtitle {
-  margin-left: 0;
-  margin-right: 0;
-  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 38rem;
 }
 
 .home-supporting-copy {
@@ -293,10 +311,10 @@ body {
 
 .home-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
-  max-width: 46rem;
-  margin: 12vh auto 0;
+  max-width: 58rem;
+  margin: 2rem auto 0;
 }
 
 .home-action-card {
@@ -316,6 +334,10 @@ body {
   color: #eff3ff;
   text-align: left;
   overflow: hidden;
+}
+
+.home-action-card:disabled {
+  opacity: 0.88;
 }
 
 .home-action-card::before {
@@ -357,6 +379,22 @@ body {
   background-image: linear-gradient(90deg, rgba(96, 165, 250, 0.12), rgba(129, 140, 248, 0.8) 24%, rgba(167, 139, 250, 0.96) 52%, rgba(96, 165, 250, 0.82) 76%, rgba(96, 165, 250, 0.12));
 }
 
+.home-action-pro {
+  border-color: rgba(167, 139, 250, 0.32);
+  background:
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.24), transparent 32%),
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.14), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.02) 12%, rgba(13, 12, 24, 0.985) 12%, rgba(16, 14, 32, 0.985) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 20px 46px rgba(8, 10, 24, 0.44),
+    0 0 0 1px rgba(66, 44, 126, 0.28);
+}
+
+.home-action-pro::before {
+  background-image: linear-gradient(90deg, rgba(96, 165, 250, 0.12), rgba(129, 140, 248, 0.82) 20%, rgba(139, 92, 246, 0.98) 48%, rgba(244, 114, 182, 0.84) 76%, rgba(96, 165, 250, 0.12));
+}
+
 .home-action-icon {
   display: inline-flex;
   align-items: center;
@@ -379,11 +417,44 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .home-action-copy strong {
   font-size: 1rem;
   line-height: 1.2;
+}
+
+.home-action-topline {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.home-action-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.18rem 0.48rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.home-action-badge-pro {
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  color: #8cf1c4;
+}
+
+.home-action-badge-locked {
+  background: rgba(167, 139, 250, 0.12);
+  border: 1px solid rgba(167, 139, 250, 0.28);
+  color: #d8c7ff;
 }
 
 .home-action-copy span {
@@ -408,16 +479,26 @@ body {
     linear-gradient(180deg, rgba(25, 28, 54, 0.98), rgba(13, 15, 28, 0.98));
 }
 
+.home-action-pro .home-action-icon {
+  color: #e9d5ff;
+  border-color: rgba(192, 132, 252, 0.3);
+  background:
+    radial-gradient(circle at top left, rgba(216, 180, 254, 0.28), transparent 56%),
+    linear-gradient(180deg, rgba(50, 28, 82, 0.98), rgba(20, 14, 38, 0.98));
+}
+
 .home-action-open .home-action-copy strong,
 .home-action-open .home-action-copy span,
 .home-action-reports .home-action-copy strong,
-.home-action-reports .home-action-copy span {
+.home-action-reports .home-action-copy span,
+.home-action-pro .home-action-copy strong,
+.home-action-pro .home-action-copy span {
   text-align: left;
 }
 
 .home-recents {
-  max-width: 52rem;
-  margin: 1.75rem auto 0;
+  max-width: 58rem;
+  margin: 2.1rem auto 0;
 }
 
 .home-recents-heading {
@@ -430,7 +511,7 @@ body {
 }
 
 .home-hint {
-  max-width: 46rem;
+  max-width: 48rem;
   margin: 1.25rem auto 0;
   text-align: center;
 }
@@ -2434,6 +2515,15 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .home-hero {
+    padding-top: 2rem;
+  }
+
+  .home-logo {
+    width: 3.85rem;
+    height: 3.85rem;
+  }
+
   .recent-project,
   .report-project-entry,
   .history-entry {
@@ -2449,6 +2539,12 @@ code {
   .home-section-heading {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (min-width: 720px) and (max-width: 1080px) {
+  .home-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
