@@ -2,41 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
-const freeFeatures = [
-  ["Deleted test files", "Catches cases where the agent removed your test coverage."],
-  ["Suspicious secrets", "Flags hardcoded credentials or tokens in the diff."],
-  ["Dependency changes", "Highlights new packages or config file modifications."],
-  ["Placeholder content", "Detects TODO stubs or unfinished code left in production files."],
-  ["Large diff warning", "Flags unusually large or broad changes before you commit."],
-  ["Test runner", "Run your test suite as part of every readiness check."],
-];
-
-const proFeatures = [
-  ["Feature alignment", "Did the agent actually build what you asked for? Claude reads the diff and gives a verdict."],
-  ["Unrelated file detection", "Surfaces files changed outside the scope of your request."],
-  ["Scope creep analysis", "Identifies changes that go beyond what was requested."],
-  ["Misleading UI copy", "Catches UI text that doesn't match the requested feature."],
-  ["Suggested fixes", "Specific, actionable guidance on what to correct before committing."],
-  ["Everything in Free", "All free checks included — one tool for the full picture."],
-];
-
-const freePricing = [
-  "Unlimited free checks",
-  "Risk scan on every diff",
-  "Test runner integration",
-  "Repair prompt on every check",
-  "Saved report history",
-];
-
-const proPricing = [
-  "Everything in Free",
-  "AI feature alignment check",
-  "Unrelated file detection",
-  "Scope creep analysis",
-  "Misleading copy detection",
-  "Suggested fixes per check",
-];
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#09090d] text-[#edf2ff]">
@@ -68,8 +33,7 @@ export default function Home() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section className="pt-40 pb-28 px-6 text-center relative overflow-hidden">
-        {/* glow layers */}
+      <section className="pt-40 pb-20 px-6 text-center relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[480px] bg-violet-600/10 rounded-full blur-3xl" />
           <div className="absolute top-24 left-1/4 w-[400px] h-[300px] bg-indigo-500/6 rounded-full blur-3xl" />
@@ -77,7 +41,6 @@ export default function Home() {
         </div>
 
         <div className="relative max-w-3xl mx-auto">
-          {/* logo */}
           <div className="flex justify-center mb-6">
             <Image
               src="/agentready-glyph.png"
@@ -90,18 +53,19 @@ export default function Home() {
           </div>
 
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-600/30 bg-brand-600/10 text-brand-400 text-xs font-semibold tracking-wide uppercase mb-8">
-            Built for AI-assisted development
+            A verification layer for AI-generated code
           </div>
 
           <h1 className="text-5xl sm:text-6xl font-extrabold leading-tight tracking-tight text-white mb-5">
-            Your AI ships fast.<br />
+            Catch risky AI code<br />
             <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-              You commit with confidence.
+              before you commit.
             </span>
           </h1>
 
           <p className="text-lg text-[#9aa5c4] leading-relaxed mb-10 max-w-xl mx-auto">
-            AgentReady catches what your AI agent missed — before it lands in your codebase.
+            Free checks scan your diff for obvious red flags.
+            Pro verifies the diff actually matches what you asked the agent to build.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -116,8 +80,35 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Free vs Pro split ────────────────────────────────────────────────── */}
+      <section className="pb-20 px-6">
+        <div className="max-w-2xl mx-auto grid sm:grid-cols-2 gap-4">
+          <div className="p-5 rounded-2xl border border-emerald-500/18 bg-emerald-500/[0.03]">
+            <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold tracking-widest uppercase mb-3">
+              Free
+            </span>
+            <p className="text-white font-semibold text-base mb-1">Obvious risk scan</p>
+            <p className="text-sm text-[#9aa5c4] leading-relaxed">
+              Runs locally on every diff. Catches deleted tests, hardcoded secrets,
+              dependency changes, and placeholder code before they reach your repo.
+            </p>
+          </div>
+          <div className="p-5 rounded-2xl border border-violet-500/25 relative overflow-hidden" style={{ background: "rgba(124,58,237,0.04)" }}>
+            <div className="absolute top-0 left-4 right-4 h-[2px] rounded-b-full gradient-trim-violet" />
+            <span className="inline-block px-2.5 py-0.5 rounded-full bg-brand-600/15 border border-brand-600/30 text-brand-400 text-[10px] font-bold tracking-widest uppercase mb-3">
+              Pro — $9/mo
+            </span>
+            <p className="text-white font-semibold text-base mb-1">Alignment review</p>
+            <p className="text-sm text-[#9aa5c4] leading-relaxed">
+              Claude reads the diff and answers: did the agent actually build the right thing,
+              or did it drift, add unrelated files, or go beyond what you asked?
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ── How it works ─────────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-24 px-6">
+      <section id="how-it-works" className="py-24 px-6 border-t border-white/5">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-white mb-3">How it works</h2>
@@ -126,7 +117,6 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-6">
 
-            {/* Step 1 — violet */}
             <div className="p-6 rounded-2xl border border-violet-500/18 bg-white/[0.02] hover:border-violet-500/35 transition-colors group">
               <div className="w-10 h-10 rounded-xl mb-5 flex items-center justify-center border border-violet-500/25 bg-gradient-to-br from-violet-600/20 to-purple-500/10 text-violet-400 group-hover:border-violet-500/40 transition-colors">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -138,7 +128,6 @@ export default function Home() {
               <p className="text-sm text-[#9aa5c4] leading-relaxed">Point AgentReady at any local git repository. It reads your uncommitted changes — nothing is uploaded.</p>
             </div>
 
-            {/* Step 2 — indigo */}
             <div className="p-6 rounded-2xl border border-indigo-500/18 bg-white/[0.02] hover:border-indigo-500/35 transition-colors group">
               <div className="w-10 h-10 rounded-xl mb-5 flex items-center justify-center border border-indigo-500/25 bg-gradient-to-br from-indigo-500/20 to-violet-500/10 text-indigo-400 group-hover:border-indigo-500/40 transition-colors">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -146,11 +135,10 @@ export default function Home() {
                 </svg>
               </div>
               <p className="text-xs font-bold tracking-widest text-indigo-400/70 uppercase mb-2">Step 02</p>
-              <h3 className="text-base font-semibold text-white mb-2">Describe what you built</h3>
-              <p className="text-sm text-[#9aa5c4] leading-relaxed">Tell AgentReady what you asked the AI to do. One sentence is enough — it becomes the benchmark for the alignment check.</p>
+              <h3 className="text-base font-semibold text-white mb-2">Describe the change</h3>
+              <p className="text-sm text-[#9aa5c4] leading-relaxed">Say what you asked the agent to build. One sentence is enough — it becomes the benchmark for the readiness check.</p>
             </div>
 
-            {/* Step 3 — blue */}
             <div className="p-6 rounded-2xl border border-blue-500/18 bg-white/[0.02] hover:border-blue-500/35 transition-colors group">
               <div className="w-10 h-10 rounded-xl mb-5 flex items-center justify-center border border-blue-500/25 bg-gradient-to-br from-blue-500/20 to-indigo-500/10 text-blue-400 group-hover:border-blue-500/40 transition-colors">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
@@ -158,8 +146,8 @@ export default function Home() {
                 </svg>
               </div>
               <p className="text-xs font-bold tracking-widest text-blue-400/70 uppercase mb-2">Step 03</p>
-              <h3 className="text-base font-semibold text-white mb-2">Get a verdict</h3>
-              <p className="text-sm text-[#9aa5c4] leading-relaxed">AgentReady runs risk checks on the diff and — with Pro — asks Claude whether the agent actually built what you asked for.</p>
+              <h3 className="text-base font-semibold text-white mb-2">Get a readiness verdict</h3>
+              <p className="text-sm text-[#9aa5c4] leading-relaxed">AgentReady returns a verdict with a repair prompt. Pro adds Claude's judgment on whether the agent actually did the job.</p>
             </div>
 
           </div>
@@ -171,19 +159,25 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-white mb-3">What gets checked</h2>
-            <p className="text-[#9aa5c4]">Free checks run locally on every diff. Pro checks use Claude AI.</p>
+            <p className="text-[#9aa5c4]">Free checks run locally on every diff. Pro checks use Claude.</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
 
             {/* Free */}
             <div className="rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden">
-              <div className="px-8 pt-8 pb-6">
-                <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-wide uppercase mb-5">
-                  Free
+              <div className="px-8 pt-8 pb-8">
+                <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-wide uppercase mb-6">
+                  Free catches
                 </span>
-                <ul className="space-y-4">
-                  {freeFeatures.map(([title, desc]) => (
+                <ul className="space-y-5">
+                  {[
+                    ["Deleted tests", "Did the agent remove test coverage in the process?"],
+                    ["Hardcoded secrets", "Credentials or tokens left in the diff."],
+                    ["Dependency changes", "New packages or config modifications that deserve a second look."],
+                    ["Placeholder code", "TODO stubs and unfinished logic left in production paths."],
+                    ["Oversized diffs", "Unusually broad changes that are hard to review or roll back."],
+                  ].map(([title, desc]) => (
                     <li key={title} className="flex gap-3">
                       <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-emerald-500/12 border border-emerald-500/25 flex items-center justify-center">
                         <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -200,14 +194,19 @@ export default function Home() {
 
             {/* Pro */}
             <div className="rounded-2xl border border-violet-500/20 overflow-hidden" style={{ background: "rgba(124,58,237,0.03)" }}>
-              {/* animated gradient trim */}
               <div className="h-[3px] mx-6 mt-0 rounded-b-full gradient-trim-violet" />
               <div className="px-8 pt-6 pb-8">
-                <span className="inline-block px-3 py-1 rounded-full bg-brand-600/15 border border-brand-600/30 text-brand-400 text-xs font-bold tracking-wide uppercase mb-5">
-                  Pro — $9/mo
+                <span className="inline-block px-3 py-1 rounded-full bg-brand-600/15 border border-brand-600/30 text-brand-400 text-xs font-bold tracking-wide uppercase mb-6">
+                  Pro answers
                 </span>
-                <ul className="space-y-4">
-                  {proFeatures.map(([title, desc]) => (
+                <ul className="space-y-5">
+                  {[
+                    ["Did the agent build the right thing?", "Claude reads the diff against your spec and returns a verdict."],
+                    ["Did it touch files outside the scope?", "Surfaces changed files that have nothing to do with what you asked."],
+                    ["Did it drift beyond the request?", "Identifies changes that go further than the feature required."],
+                    ["Does the UI copy match?", "Catches text in the UI that doesn't reflect the requested feature."],
+                    ["What needs to be fixed?", "Specific, actionable guidance on what to correct before committing."],
+                  ].map(([title, desc]) => (
                     <li key={title} className="flex gap-3">
                       <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-400">◆</span>
                       <div>
@@ -229,7 +228,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-white mb-3">Simple pricing</h2>
-            <p className="text-[#9aa5c4]">Start free. Upgrade when the AI check matters to you.</p>
+            <p className="text-[#9aa5c4]">Start free. Upgrade when the alignment check matters to you.</p>
           </div>
 
           <div className="grid sm:grid-cols-2 gap-6">
@@ -238,11 +237,17 @@ export default function Home() {
             <div className="p-8 rounded-2xl border border-white/8 bg-white/[0.02] flex flex-col">
               <div className="mb-5">
                 <h3 className="text-xl font-bold text-white mb-1">Free</h3>
-                <p className="text-[#9aa5c4] text-sm">Deterministic risk scanning</p>
+                <p className="text-[#9aa5c4] text-sm">Catch obvious risks in the diff</p>
               </div>
               <div className="text-4xl font-black text-white mb-7">$0</div>
               <ul className="space-y-3 mb-8 flex-1">
-                {freePricing.map((f) => (
+                {[
+                  "Unlimited checks",
+                  "Risk scan on every diff",
+                  "Test runner integration",
+                  "Repair prompt on every check",
+                  "Saved report history",
+                ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm text-[#c8d3f0]">
                     <span className="flex-shrink-0 w-4 h-4 rounded-full bg-emerald-500/12 border border-emerald-500/25 flex items-center justify-center">
                       <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -258,7 +263,6 @@ export default function Home() {
 
             {/* Pro tier */}
             <div className="rounded-2xl border border-violet-500/30 flex flex-col overflow-hidden relative" style={{ background: "rgba(124,58,237,0.04)" }}>
-              {/* animated gradient trim */}
               <div className="h-[3px] mx-0 gradient-trim-violet" />
               <div className="p-8 flex flex-col flex-1">
                 <div className="absolute top-6 right-6 px-2.5 py-1 rounded-full bg-brand-600/20 border border-brand-600/30 text-brand-400 text-[10px] font-bold tracking-wide uppercase">
@@ -266,13 +270,20 @@ export default function Home() {
                 </div>
                 <div className="mb-5">
                   <h3 className="text-xl font-bold text-white mb-1">Pro</h3>
-                  <p className="text-[#9aa5c4] text-sm">AI alignment review</p>
+                  <p className="text-[#9aa5c4] text-sm">Verify the agent built the right thing</p>
                 </div>
                 <div className="text-4xl font-black text-white mb-7">
                   $9<span className="text-lg font-medium text-[#9aa5c4]">/mo</span>
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
-                  {proPricing.map((f) => (
+                  {[
+                    "Everything in Free",
+                    "AI feature alignment check",
+                    "Unrelated file detection",
+                    "Scope creep analysis",
+                    "Misleading copy detection",
+                    "Suggested fixes per check",
+                  ].map((f) => (
                     <li key={f} className="flex items-center gap-2.5 text-sm text-[#c8d3f0]">
                       <span className="flex-shrink-0 w-4 h-4 rounded-full bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-[8px] text-violet-400">◆</span>
                       {f}

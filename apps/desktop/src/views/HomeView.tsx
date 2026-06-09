@@ -29,29 +29,50 @@ export function HomeView({
         </div>
       )}
 
+      {!hasRecents && (
+        <header className="home-header">
+          <p className="eyebrow">Home</p>
+          <h1>Choose what to do next</h1>
+          <p className="subtitle">
+            Open a local git repository to run a check, or jump into your saved report history.
+          </p>
+        </header>
+      )}
+
+      <div className="home-actions">
+        <button
+          type="button"
+          className="home-action-card home-action-open"
+          disabled={isBusy}
+          onClick={onOpenProject}
+        >
+          <span className="home-action-icon">
+            <FolderIcon />
+          </span>
+          <span className="home-action-copy">
+            <strong>{isBusy ? "Opening..." : "Open project"}</strong>
+            <span>Choose a local git repository and run a pre-commit check on the current diff.</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="home-action-card home-action-reports"
+          disabled={isBusy}
+          onClick={onBrowseHistory}
+        >
+          <span className="home-action-icon">
+            <HistoryIcon />
+          </span>
+          <span className="home-action-copy">
+            <strong>History</strong>
+            <span>Browse saved reports from projects you have already checked.</span>
+          </span>
+        </button>
+      </div>
+
       {hasRecents ? (
-        <div className="home-recents home-recents-primary">
-          <div className="home-section-heading">
-            <h2>Recent projects</h2>
-            <div className="home-heading-actions">
-              <button
-                type="button"
-                className="secondary home-open-btn"
-                disabled={isBusy}
-                onClick={onBrowseHistory}
-              >
-                History
-              </button>
-              <button
-                type="button"
-                className="secondary home-open-btn"
-                disabled={isBusy}
-                onClick={onOpenProject}
-              >
-                {isBusy ? "Opening…" : "Open project"}
-              </button>
-            </div>
-          </div>
+        <div className="home-recents">
+          <h2 className="home-recents-heading">Recent projects</h2>
           <ul className="recent-projects-list">
             {recentProjects.slice(0, 8).map((project) => (
               <li key={project.repoPath}>
@@ -79,50 +100,9 @@ export function HomeView({
           </ul>
         </div>
       ) : (
-        <div className="home-hero">
-          <header className="home-header">
-            <p className="eyebrow">Home</p>
-            <h1>Choose what to do next</h1>
-            <p className="subtitle">
-              Open a local git repository to run a check, or jump into your saved report history.
-            </p>
-          </header>
-
-          <div className="home-actions">
-            <button
-              type="button"
-              className="home-action-card home-action-open"
-              disabled={isBusy}
-              onClick={onOpenProject}
-            >
-              <span className="home-action-icon">
-                <FolderIcon />
-              </span>
-              <span className="home-action-copy">
-                <strong>{isBusy ? "Opening..." : "Open project folder"}</strong>
-                <span>Choose a local git repository and run a pre-commit check on the current diff.</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              className="home-action-card home-action-reports"
-              disabled={isBusy}
-              onClick={onBrowseHistory}
-            >
-              <span className="home-action-icon">
-                <HistoryIcon />
-              </span>
-              <span className="home-action-copy">
-                <strong>Show history</strong>
-                <span>Browse saved reports from projects you have already checked.</span>
-              </span>
-            </button>
-          </div>
-
-          <p className="hint">
-            Free checks focus on obvious risks in the diff. Feature alignment review is available in Pro.
-          </p>
-        </div>
+        <p className="hint home-hint">
+          Free checks focus on obvious risks in the diff. Feature alignment review is available in Pro.
+        </p>
       )}
     </section>
   );
