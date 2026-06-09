@@ -97,26 +97,28 @@ function App() {
   const [contextForgeError, setContextForgeError] = useState<string | null>(null);
   const contextForgeSeq = useRef(0);
 
+  const refreshAuthToken = async () => {
+    const token = await getAuthToken();
+    setAuthToken(token);
+    return token;
+  };
+
   useEffect(() => {
     void loadAppSettings()
       .then(setAppSettings)
       .catch(() => {});
 
-    void getAuthToken()
-      .then((token) => {
-        setAuthToken(token);
+    void refreshAuthToken()
+      .then(() => {
         setAuthChecked(true);
       })
       .catch(() => {
         setAuthChecked(true);
       });
 
-    const unlistenPromise = listen("auth-token-saved", () => {
-      void getAuthToken().then((token) => {
-        setAuthToken(token);
-        setIsSettingsOpen(false);
-        // Preserve current screen — user may be mid-session or mid-results
-      });
+    const unlistenPromise = listen<string>("auth-token-saved", (event) => {
+      setAuthToken(event.payload);
+      setIsSettingsOpen(false);
     });
     return () => { void unlistenPromise.then((fn) => fn()); };
   }, []);
@@ -355,6 +357,17 @@ function App() {
 
   const handleSignIn = async () => {
     await openSignIn();
+    // The browser flow completes out-of-process, so poll briefly for the newly
+    // saved token as a fallback in case the app misses or delays the auth event.
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 500));
+      const token = await getAuthToken();
+      if (token) {
+        setAuthToken(token);
+        setIsSettingsOpen(false);
+        break;
+      }
+    }
   };
 
   const handleSignOut = async () => {

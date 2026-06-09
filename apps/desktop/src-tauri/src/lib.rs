@@ -230,15 +230,17 @@ async fn open_sign_in(app: tauri::AppHandle) -> Result<(), String> {
 
         // Exchange the code and persist the token before responding to the
         // browser — success HTML is only sent if both steps succeed.
-        let saved = match code {
-            None => false,
+        let saved_token: Option<String> = match code {
+            None => None,
             Some(c) => match exchange_code_for_token(&c).await {
-                Err(e) => { eprintln!("[auth] Code exchange failed: {e}"); false }
-                Ok(token) => auth::save_token(&app, token.clone()).is_ok(),
+                Err(e) => { eprintln!("[auth] Code exchange failed: {e}"); None }
+                Ok(token) => {
+                    if auth::save_token(&app, token.clone()).is_ok() { Some(token) } else { None }
+                }
             },
         };
 
-        let (status, body) = if saved { ("200 OK", success_html) } else { ("400 Bad Request", fail_html) };
+        let (status, body) = if saved_token.is_some() { ("200 OK", success_html) } else { ("400 Bad Request", fail_html) };
         let response = format!(
             "HTTP/1.1 {status}\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{body}",
             body.len()
@@ -246,8 +248,9 @@ async fn open_sign_in(app: tauri::AppHandle) -> Result<(), String> {
         let _ = stream.write_all(response.as_bytes()).await;
         drop(stream);
 
-        if saved {
-            let _ = app.emit("auth-token-saved", ());
+        // Emit the token directly so the frontend updates without a keychain re-read
+        if let Some(token) = saved_token {
+            let _ = app.emit("auth-token-saved", token);
         }
     });
 
@@ -345,8 +348,8 @@ pub fn run() {
                             tauri::async_runtime::spawn(async move {
                                 match exchange_code_for_token(&code).await {
                                     Ok(token) => {
-                                        if auth::save_token(&handle, token).is_ok() {
-                                            let _ = handle.emit("auth-token-saved", ());
+                                        if auth::save_token(&handle, token.clone()).is_ok() {
+                                            let _ = handle.emit("auth-token-saved", token);
                                         }
                                     }
                                     Err(e) => eprintln!("[auth] Deep link exchange failed: {e}"),
