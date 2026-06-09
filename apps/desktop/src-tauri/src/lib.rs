@@ -217,26 +217,18 @@ async fn open_sign_in(app: tauri::AppHandle) -> Result<(), String> {
         let n = stream.read(&mut buf).await.unwrap_or(0);
         let request = String::from_utf8_lossy(&buf[..n]).to_string();
 
-        let token = parse_token_from_http_request(&request);
+        let code = parse_code_from_http_request(&request);
 
-        let (status, body) = if token.is_some() {
-            (
-                "200 OK",
-                "<html><body style='font-family:sans-serif;text-align:center;padding:60px'>\
+        let success_html = "<html><body style='font-family:sans-serif;text-align:center;padding:60px'>\
                  <h2>Signed in to AgentReady!</h2>\
                  <p>You can close this tab and return to the app.</p>\
                  <script>setTimeout(()=>window.close(),1500)</script>\
-                 </body></html>",
-            )
-        } else {
-            (
-                "400 Bad Request",
-                "<html><body style='font-family:sans-serif;text-align:center;padding:60px'>\
+                 </body></html>";
+        let fail_html = "<html><body style='font-family:sans-serif;text-align:center;padding:60px'>\
                  <h2>Sign-in failed.</h2><p>Please try again.</p>\
-                 </body></html>",
-            )
-        };
+                 </body></html>";
 
+        let (status, body) = if code.is_some() { ("200 OK", success_html) } else { ("400 Bad Request", fail_html) };
         let response = format!(
             "HTTP/1.1 {status}\r\nContent-Type: text/html\r\nContent-Length: {}\r\n\r\n{body}",
             body.len()
@@ -244,9 +236,14 @@ async fn open_sign_in(app: tauri::AppHandle) -> Result<(), String> {
         let _ = stream.write_all(response.as_bytes()).await;
         drop(stream);
 
-        if let Some(t) = token {
-            if auth::save_token(&app, t).is_ok() {
-                let _ = app.emit("auth-token-saved", ());
+        if let Some(c) = code {
+            match exchange_code_for_token(&c).await {
+                Ok(token) => {
+                    if auth::save_token(&app, token).is_ok() {
+                        let _ = app.emit("auth-token-saved", ());
+                    }
+                }
+                Err(e) => eprintln!("[auth] Code exchange failed: {e}"),
             }
         }
     });
@@ -273,17 +270,40 @@ fn open_browser(url: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn parse_token_from_http_request(request: &str) -> Option<String> {
-    // First line: "GET /callback?token=JWT HTTP/1.1"
+fn parse_code_from_http_request(request: &str) -> Option<String> {
+    // First line: "GET /callback?code=... HTTP/1.1"
     let path = request.lines().next()?.split_whitespace().nth(1)?;
     let query = path.splitn(2, '?').nth(1)?;
     for pair in query.split('&') {
         let mut kv = pair.splitn(2, '=');
-        if kv.next() == Some("token") {
+        if kv.next() == Some("code") {
             return kv.next().map(|v| v.to_string());
         }
     }
     None
+}
+
+async fn exchange_code_for_token(code: &str) -> Result<String, String> {
+    #[derive(serde::Deserialize)]
+    struct ExchangeResponse {
+        token: Option<String>,
+        error: Option<String>,
+    }
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post("https://agentreadyai.dev/api/auth/exchange")
+        .json(&serde_json::json!({ "code": code }))
+        .send()
+        .await
+        .map_err(|e| format!("Exchange request failed: {e}"))?;
+
+    let body: ExchangeResponse = resp
+        .json()
+        .await
+        .map_err(|e| format!("Exchange parse failed: {e}"))?;
+
+    body.token.ok_or_else(|| body.error.unwrap_or_else(|| "Unknown exchange error".to_string()))
 }
 
 fn percent_encode(s: &str) -> String {
@@ -313,14 +333,22 @@ pub fn run() {
             app.deep_link().on_open_url(move |event| {
                 for url in event.urls() {
                     if url.scheme() == "agentready" && url.host_str() == Some("auth") {
-                        if let Some(token) = url
+                        if let Some(code) = url
                             .query_pairs()
-                            .find(|(k, _)| k == "token")
+                            .find(|(k, _)| k == "code")
                             .map(|(_, v)| v.to_string())
                         {
-                            if auth::save_token(&handle, token).is_ok() {
-                                let _ = handle.emit("auth-token-saved", ());
-                            }
+                            let handle = handle.clone();
+                            tauri::async_runtime::spawn(async move {
+                                match exchange_code_for_token(&code).await {
+                                    Ok(token) => {
+                                        if auth::save_token(&handle, token).is_ok() {
+                                            let _ = handle.emit("auth-token-saved", ());
+                                        }
+                                    }
+                                    Err(e) => eprintln!("[auth] Deep link exchange failed: {e}"),
+                                }
+                            });
                         }
                     }
                 }

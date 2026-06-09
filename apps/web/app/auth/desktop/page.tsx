@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { SignJWT } from "jose";
 import { redirect } from "next/navigation";
+import { randomBytes } from "crypto";
 
 import { supabaseAdmin } from "@/lib/supabase";
 import { DesktopAuthRedirect } from "./DesktopAuthRedirect";
@@ -18,8 +19,18 @@ async function mintDesktopToken(clerkUserId: string): Promise<string> {
   return new SignJWT({ sub: clerkUserId, pro: isPro })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("30d")
+    .setExpirationTime("7d")
     .sign(secret);
+}
+
+async function createAuthCode(token: string): Promise<string> {
+  const code = randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  const { error } = await supabaseAdmin
+    .from("desktop_auth_codes")
+    .insert({ code, token, expires_at: expiresAt });
+  if (error) throw new Error("Failed to create auth code");
+  return code;
 }
 
 export default async function DesktopAuthPage({
@@ -33,10 +44,10 @@ export default async function DesktopAuthPage({
   }
 
   const token = await mintDesktopToken(user.id);
+  const code = await createAuthCode(token);
   const { callback } = await searchParams;
 
   if (callback) {
-    // Validate that the callback is a localhost URL (security check)
     let callbackUrl: URL;
     try {
       callbackUrl = new URL(callback);
@@ -49,10 +60,10 @@ export default async function DesktopAuthPage({
       return <div>Callback must be localhost.</div>;
     }
 
-    callbackUrl.searchParams.set("token", token);
+    callbackUrl.searchParams.set("code", code);
     redirect(callbackUrl.toString());
   }
 
   // No callback — fall back to deep link (works in bundled production app)
-  return <DesktopAuthRedirect token={token} />;
+  return <DesktopAuthRedirect code={code} />;
 }

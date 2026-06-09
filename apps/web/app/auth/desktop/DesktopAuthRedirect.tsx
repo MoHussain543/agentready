@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-export function DesktopAuthRedirect({ token }: { token: string }) {
+export function DesktopAuthRedirect({ code }: { code: string }) {
   const [redirected, setRedirected] = useState(false);
-  const deepLinkUrl = `agentready://auth?token=${token}`;
+  const deepLinkUrl = `agentready://auth?code=${code}`;
 
   useEffect(() => {
     window.location.href = deepLinkUrl;

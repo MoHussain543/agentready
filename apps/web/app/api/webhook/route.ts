@@ -27,28 +27,66 @@ export async function POST(req: NextRequest) {
       const customerId = session.customer as string;
       const subscriptionId = session.subscription as string;
 
-      if (clerkUserId) {
-        const { error } = await supabaseAdmin.from("subscriptions").upsert({
-          clerk_user_id: clerkUserId,
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscriptionId,
-          status: "pro",
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "clerk_user_id" });
-        if (error) console.error("Supabase upsert error:", JSON.stringify(error));
-        else console.log("Supabase upsert success for", clerkUserId);
-      } else {
+      if (!clerkUserId) {
         console.error("No clerkUserId in session metadata");
+        return NextResponse.json({ error: "Missing clerkUserId" }, { status: 400 });
+      }
+      const { error } = await supabaseAdmin.from("subscriptions").upsert({
+        clerk_user_id: clerkUserId,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        status: "pro",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "clerk_user_id" });
+      if (error) {
+        console.error("Supabase upsert error:", JSON.stringify(error));
+        return NextResponse.json({ error: "DB write failed" }, { status: 500 });
+      }
+      break;
+    }
+
+    case "customer.subscription.updated": {
+      const sub = event.data.object as Stripe.Subscription;
+      const activeStatuses = ["active", "trialing"];
+      const newStatus = activeStatuses.includes(sub.status) ? "pro" : "free";
+      const { error } = await supabaseAdmin
+        .from("subscriptions")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("stripe_subscription_id", sub.id);
+      if (error) {
+        console.error("Supabase update error:", JSON.stringify(error));
+        return NextResponse.json({ error: "DB write failed" }, { status: 500 });
       }
       break;
     }
 
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
-      await supabaseAdmin
+      const { error } = await supabaseAdmin
         .from("subscriptions")
         .update({ status: "free", updated_at: new Date().toISOString() })
         .eq("stripe_subscription_id", sub.id);
+      if (error) {
+        console.error("Supabase update error:", JSON.stringify(error));
+        return NextResponse.json({ error: "DB write failed" }, { status: 500 });
+      }
+      break;
+    }
+
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const subRef = invoice.parent?.subscription_details?.subscription;
+      const subscriptionId = typeof subRef === "string" ? subRef : subRef?.id;
+      if (subscriptionId) {
+        const { error } = await supabaseAdmin
+          .from("subscriptions")
+          .update({ status: "free", updated_at: new Date().toISOString() })
+          .eq("stripe_subscription_id", subscriptionId);
+        if (error) {
+          console.error("Supabase update error:", JSON.stringify(error));
+          return NextResponse.json({ error: "DB write failed" }, { status: 500 });
+        }
+      }
       break;
     }
   }
