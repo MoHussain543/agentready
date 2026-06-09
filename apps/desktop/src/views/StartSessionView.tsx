@@ -100,53 +100,12 @@ export function StartSessionView({
         </div>
       )}
 
-      {isFirstRun && !error && (
-        <p className="first-run-notice">
-          No checks have been run for this repository yet. Describe what you asked the AI to build, then run a pre-commit check.
-        </p>
-      )}
-
-      {latestVerdict && (
-        <div className="card latest-report-card">
-          <div className="card-header">
-            <div>
-              <h2>Latest saved check</h2>
-              {lastRunAt && (
-                <p className="meta">
-                  {new Date(lastRunAt).toLocaleString()}
-                </p>
-              )}
-            </div>
-            <VerdictBadge verdict={latestVerdict as Verdict} />
-          </div>
-          {hasLatestReport && (
-            <button
-              type="button"
-              className="secondary"
-              disabled={isRunning}
-              onClick={onViewLatest}
-            >
-              View latest report
-            </button>
-          )}
-        </div>
-      )}
-
-      {contextForgeStatus && contextForgeStatus.stack.detected && (
-        <ContextForgeBanner
-          status={contextForgeStatus}
-          isGenerating={isGeneratingContext}
-          error={contextForgeError}
-          isSignedIn={isSignedIn}
-          isPro={isPro}
-          onGenerate={onGenerateContextFiles}
-        />
-      )}
-
-      <div className="card">
+      <div className="card card-primary">
         <h2>What are you building?</h2>
         <p className="hint">
-          Used to generate the repair prompt and, in Pro, to verify feature alignment.
+          {isFirstRun
+            ? "First check for this repo. Give the feature a title, then describe what you asked the AI to build."
+            : "Describe what you asked the AI to build — used for the repair prompt and, in Pro, for alignment review."}
         </p>
         <label className="field">
           <span>Title</span>
@@ -174,51 +133,83 @@ export function StartSessionView({
         </label>
       </div>
 
-      <div className="card">
-        <h2>Tests</h2>
-        <label className="checkbox-field">
-          <input
-            type="checkbox"
-            checked={runTests}
-            disabled={isRunning}
-            onChange={(e) => onRunTestsChange(e.target.checked)}
-          />
-          <span>Run tests with this check</span>
-        </label>
+      <div className="card card-secondary">
+        <div className="tests-card-header">
+          <h2>Tests</h2>
+          <label className="checkbox-field checkbox-field-inline">
+            <input
+              type="checkbox"
+              checked={runTests}
+              disabled={isRunning}
+              onChange={(e) => onRunTestsChange(e.target.checked)}
+            />
+            <span>Run tests with this check</span>
+          </label>
+        </div>
 
-        <label className="field">
-          <span>Test command</span>
-          <input
-            type="text"
-            value={testCommand}
-            placeholder="npm test"
-            disabled={isRunning}
-            onChange={(e) => onTestCommandChange(e.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span>Test working directory</span>
-          <input
-            type="text"
-            value={testCommandCwd}
-            placeholder="apps/desktop"
-            disabled={isRunning}
-            onChange={(e) => onTestCommandCwdChange(e.target.value)}
-          />
-        </label>
-        <p className="hint">
-          Saved per repository. Leave the command blank to skip test execution. Leave the directory blank to run from the repo root.
-        </p>
-        <p className="hint">
-          Tests will run from <code>{resolvedTestCwd}</code>.
-        </p>
-
-        {testCommandMissing && (
-          <p className="inline-warning" role="alert">
-            No test command saved. Enter one above or uncheck "Run tests" to skip.
-          </p>
+        {runTests && (
+          <>
+            <label className="field">
+              <span>Test command</span>
+              <input
+                type="text"
+                value={testCommand}
+                placeholder="npm test"
+                disabled={isRunning}
+                onChange={(e) => onTestCommandChange(e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span>Test working directory</span>
+              <input
+                type="text"
+                value={testCommandCwd}
+                placeholder="apps/desktop"
+                disabled={isRunning}
+                onChange={(e) => onTestCommandCwdChange(e.target.value)}
+              />
+            </label>
+            <p className="hint">
+              Tests will run from <code>{resolvedTestCwd}</code>. Leave directory blank for repo root.
+            </p>
+            {testCommandMissing && (
+              <p className="inline-warning" role="alert">
+                No test command saved. Enter one above or uncheck "Run tests" to skip.
+              </p>
+            )}
+          </>
         )}
       </div>
+
+      {contextForgeStatus && contextForgeStatus.stack.detected && (
+        <ContextForgeBanner
+          status={contextForgeStatus}
+          isGenerating={isGeneratingContext}
+          error={contextForgeError}
+          isSignedIn={isSignedIn}
+          isPro={isPro}
+          onGenerate={onGenerateContextFiles}
+        />
+      )}
+
+      {latestVerdict && (
+        <div className="prior-check-strip">
+          <VerdictBadge verdict={latestVerdict as Verdict} />
+          <span className="prior-check-label">
+            Last check{lastRunAt ? ` · ${new Date(lastRunAt).toLocaleDateString()}` : ""}
+          </span>
+          {hasLatestReport && (
+            <button
+              type="button"
+              className="prior-check-view"
+              disabled={isRunning}
+              onClick={onViewLatest}
+            >
+              View report
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="actions">
         <button

@@ -1034,6 +1034,80 @@ code,
   transition: border-color 160ms ease;
 }
 
+.card-primary {
+  border-color: rgba(139, 92, 246, 0.28);
+  background: rgba(139, 92, 246, 0.04);
+}
+
+.card-secondary {
+  background: rgba(255, 255, 255, 0.015);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.card-secondary h2 {
+  font-size: 0.95rem;
+  color: #9aa5c4;
+  font-weight: 500;
+}
+
+.tests-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tests-card-header h2 {
+  margin: 0;
+}
+
+.checkbox-field-inline {
+  margin-top: 0;
+}
+
+.prior-check-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.prior-check-label {
+  font-size: 0.82rem;
+  color: #6b7a9f;
+  flex: 1;
+}
+
+.prior-check-view {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  border-radius: 7px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9aa5c4;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+  box-shadow: none;
+  letter-spacing: 0;
+  font-weight: normal;
+}
+
+.prior-check-view:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: #d8e0fb;
+  transform: none;
+  box-shadow: none;
+}
+
+.prior-check-view:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .card h2 {
   margin: 0 0 0.55rem;
   font-size: 1.08rem;
@@ -1305,20 +1379,104 @@ button.primary-purple:active:not(:disabled) {
 }
 
 .checks-list li {
-  display: flex;
-  gap: 0.9rem;
-  padding: 0.9rem 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
 }
 
 .checks-list li:first-child {
   border-top: none;
-  padding-top: 0;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.75rem 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: none;
+  letter-spacing: 0;
+  font-weight: normal;
+  transition: none;
+}
+
+.check-row:hover:not(:disabled) {
+  background: transparent;
+  transform: none;
+  box-shadow: none;
+}
+
+.check-name-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.check-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #d8e0fb;
+}
+
+.check-preview {
+  font-size: 0.79rem;
+  color: #5a6480;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.check-chevron {
+  font-size: 0.75rem;
+  color: #5a6480;
+  flex-shrink: 0;
 }
 
 .check-body {
+  padding: 0 0 0.85rem 0;
+  margin-left: calc(3.25rem + 0.8rem);
+}
+
+.collapsible-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  box-shadow: none;
+  letter-spacing: 0;
+  font-weight: normal;
+}
+
+.collapsible-card-header:hover:not(:disabled) {
+  background: transparent;
+  transform: none;
+  box-shadow: none;
+}
+
+.collapsible-card-header h2 {
+  margin: 0;
   flex: 1;
-  min-width: 0;
+}
+
+.collapsible-meta {
+  font-size: 0.8rem;
+  color: #5a6480;
+  font-weight: normal;
+  flex-shrink: 0;
 }
 
 .check-findings {
@@ -1970,14 +2128,6 @@ button.primary-purple:active:not(:disabled) {
   font-size: 0.85rem;
 }
 
-.latest-report-card .card-header {
-  margin-bottom: 0.75rem;
-}
-
-.latest-report-card .meta {
-  margin: 0.25rem 0 0;
-}
-
 .saved-note {
   margin: 0.65rem 0 0;
   font-size: 0.88rem;
@@ -2011,13 +2161,6 @@ button.primary-purple:active:not(:disabled) {
   font-size: 0.88rem;
   color: #8f9ab6;
   line-height: 1.5;
-}
-
-.first-run-notice {
-  margin-top: 1.1rem;
-  font-size: 0.92rem;
-  color: #9ca7c4;
-  line-height: 1.55;
 }
 
 .inline-warning {

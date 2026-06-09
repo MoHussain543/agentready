@@ -39,6 +39,16 @@ export function ResultsView({
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitResult, setCommitResult] = useState<string | null>(null);
   const [commitError, setCommitError] = useState<string | null>(null);
+  const [expandedChecks, setExpandedChecks] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    for (const check of report.checks) {
+      if (check.status === "warn" || check.status === "fail") {
+        initial.add(check.id);
+      }
+    }
+    return initial;
+  });
+  const [diffExpanded, setDiffExpanded] = useState(report.diffSummary.totalFiles <= 5);
 
   const handleGenerateNarrative = async () => {
     if (!authToken) return;
@@ -56,7 +66,12 @@ export function ResultsView({
       });
       setNarrative(result);
     } catch (err) {
-      setNarrativeError(err instanceof Error ? err.message : String(err));
+      const raw = err instanceof Error ? err.message : String(err);
+      setNarrativeError(
+        raw.includes("Command generate_narrative not found")
+          ? "Commit generation requires a fresh build — restart the app to enable GitNarrator."
+          : raw,
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -123,7 +138,13 @@ export function ResultsView({
     (f) => !report.checks.some((c) => c.id === f.checkId),
   );
 
-  const isReady = report.verdict === "READY_TO_COMMIT";
+  const toggleCheck = (id: string) => {
+    setExpandedChecks((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const repairPromptSection = (
     <div className="card">
@@ -329,45 +350,62 @@ export function ResultsView({
         </div>
       )}
 
-      {isReady ? narratorSection : repairPromptSection}
-
       <div className="card">
         <h2>Checks</h2>
         <ul className="checks-list">
           {report.checks.map((check) => {
             const checkFindings = findingsByCheckId.get(check.id) ?? [];
+            const isExpanded = expandedChecks.has(check.id);
+            const hasDetail = check.message || check.remediation || checkFindings.length > 0;
             return (
               <li key={check.id}>
-                <span className={`status status-${check.status}`}>
-                  {check.status}
-                </span>
-                <div className="check-body">
-                  <strong>{check.name}</strong>
-                  <p>{check.message}</p>
-                  {check.remediation && (
-                    <p className="remediation">{check.remediation}</p>
+                <button
+                  type="button"
+                  className={`check-row${isExpanded ? " check-row-expanded" : ""}`}
+                  onClick={() => hasDetail && toggleCheck(check.id)}
+                  aria-expanded={isExpanded}
+                >
+                  <span className={`status status-${check.status}`}>{check.status}</span>
+                  <span className="check-name-group">
+                    <span className="check-name">{check.name}</span>
+                    {!isExpanded && check.message && (
+                      <span className="check-preview">{check.message}</span>
+                    )}
+                  </span>
+                  {hasDetail && (
+                    <span className="check-chevron" aria-hidden="true">
+                      {isExpanded ? "▾" : "▸"}
+                    </span>
                   )}
-                  {checkFindings.length > 0 && (
-                    <ul className="check-findings">
-                      {checkFindings.map((finding) => (
-                        <li
-                          key={`${finding.checkId}-${finding.message}`}
-                          className={`check-finding-item check-finding-item-${finding.severity}`}
-                        >
-                          <span className={`severity severity-${finding.severity}`}>
-                            {finding.severity}
-                          </span>
-                          <span className="check-finding-detail">
-                            {finding.message}
-                            {finding.paths && finding.paths.length > 0 && (
-                              <span className="paths"> — {finding.paths.join(", ")}</span>
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                </button>
+                {isExpanded && hasDetail && (
+                  <div className="check-body">
+                    {check.message && <p>{check.message}</p>}
+                    {check.remediation && (
+                      <p className="remediation">{check.remediation}</p>
+                    )}
+                    {checkFindings.length > 0 && (
+                      <ul className="check-findings">
+                        {checkFindings.map((finding) => (
+                          <li
+                            key={`${finding.checkId}-${finding.message}`}
+                            className={`check-finding-item check-finding-item-${finding.severity}`}
+                          >
+                            <span className={`severity severity-${finding.severity}`}>
+                              {finding.severity}
+                            </span>
+                            <span className="check-finding-detail">
+                              {finding.message}
+                              {finding.paths && finding.paths.length > 0 && (
+                                <span className="paths"> — {finding.paths.join(", ")}</span>
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -470,17 +508,29 @@ export function ResultsView({
       )}
 
       <div className="card">
-        <h2>Diff summary</h2>
-        <DiffList label="Added" paths={report.diffSummary.added} />
-        <DiffList label="Modified" paths={report.diffSummary.modified} />
-        <DiffList label="Deleted" paths={report.diffSummary.deleted} />
-        <p className="stat-line">
-          {report.diffSummary.totalFiles} files ·{" "}
-          <strong>{report.diffSummary.totalChangedLines}</strong> changed lines
-        </p>
+        <button
+          type="button"
+          className="collapsible-card-header"
+          onClick={() => setDiffExpanded((v) => !v)}
+          aria-expanded={diffExpanded}
+        >
+          <h2>Diff summary</h2>
+          <span className="collapsible-meta">
+            {report.diffSummary.totalFiles} file{report.diffSummary.totalFiles === 1 ? "" : "s"} · {report.diffSummary.totalChangedLines} lines
+          </span>
+          <span className="check-chevron" aria-hidden="true">{diffExpanded ? "▾" : "▸"}</span>
+        </button>
+        {diffExpanded && (
+          <>
+            <DiffList label="Added" paths={report.diffSummary.added} />
+            <DiffList label="Modified" paths={report.diffSummary.modified} />
+            <DiffList label="Deleted" paths={report.diffSummary.deleted} />
+          </>
+        )}
       </div>
 
-      {isReady ? repairPromptSection : narratorSection}
+      {repairPromptSection}
+      {narratorSection}
 
       <div className="actions">
         <button
