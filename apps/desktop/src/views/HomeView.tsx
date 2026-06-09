@@ -28,10 +28,10 @@ export function HomeView({
   const hasRecents = recentProjects.length > 0;
   const proTitle = isPro ? "Pro workspace" : "Explore Pro";
   const proSubtitle = isPro
-    ? "Open your premium workspace for alignment review, ContextForge, and GitNarrator."
+    ? "Open your premium workspace for alignment review, AgentForge, and AgentNarrator."
     : isSignedIn
-      ? "Alignment review, ContextForge, and GitNarrator live here. Upgrade to unlock the workspace."
-      : "Alignment review, ContextForge, and GitNarrator live here. Sign in to explore Pro.";
+      ? "Alignment review, AgentForge, and AgentNarrator live here. Upgrade to unlock the workspace."
+      : "Alignment review, AgentForge, and AgentNarrator live here. Sign in to explore Pro.";
   const proBadge = isPro ? "PRO" : "Locked";
 
   return (

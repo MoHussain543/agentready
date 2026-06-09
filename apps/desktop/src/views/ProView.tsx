@@ -26,54 +26,42 @@ export function ProView({
   onOpenRecentProject,
   onRunCheck,
 }: ProViewProps) {
+  const repoName = repoPath ? repoPath.split("/").filter(Boolean).pop() ?? repoPath : null;
+
   return (
     <section className="view pro-view">
-      <header className="view-header pro-view-header">
-        <div className="pro-view-title-row">
-          <div>
-            <p className="eyebrow">Pro tools</p>
-            <h1>Your Pro workspace</h1>
-          </div>
-          <span className="pro-badge">
-            <SparkIcon />
-            Pro
-          </span>
-        </div>
-        {repoPath && <p className="repo-path">{repoPath}</p>}
-      </header>
-
       {!repoPath ? (
-        <div className="pro-view-empty">
-          <div className="pro-view-empty-icon">
-            <FolderProIcon />
+        <div className="pro-empty">
+          <div className="pro-empty-content">
+            <p className="eyebrow">Pro workspace</p>
+            <h1>Open a project</h1>
+            <p className="pro-empty-sub">
+              Open a git repository to run Pro checks, generate context files, and access AgentNarrator.
+            </p>
+            <button
+              type="button"
+              className="primary-purple"
+              disabled={isBusy}
+              onClick={onOpenProject}
+            >
+              {isBusy ? "Opening…" : "Open project"}
+            </button>
           </div>
-          <p className="pro-view-empty-label">No project open</p>
-          <p className="pro-view-empty-sub">
-            Open a git repository to access ContextForge, GitNarrator, and alignment review.
-          </p>
-          <button
-            type="button"
-            className="primary-purple"
-            disabled={isBusy}
-            onClick={onOpenProject}
-          >
-            {isBusy ? "Opening…" : "Open project"}
-          </button>
 
           {recentProjects.length > 0 && (
-            <div className="pro-view-recents">
-              <p className="pro-view-recents-label">Recent projects</p>
-              <ul className="pro-view-recents-list">
+            <div className="pro-recents">
+              <p className="pro-recents-label">Recent</p>
+              <ul className="pro-recents-list">
                 {recentProjects.slice(0, 6).map((p) => (
                   <li key={p.repoPath}>
                     <button
                       type="button"
-                      className="pro-view-recent-item"
+                      className="pro-recent-item"
                       disabled={isBusy}
                       onClick={() => onOpenRecentProject(p.repoPath)}
                     >
-                      <span className="pro-view-recent-name">{p.repoName}</span>
-                      <span className="pro-view-recent-path">{p.repoPath}</span>
+                      <span className="pro-recent-name">{p.repoName}</span>
+                      <span className="pro-recent-path">{p.repoPath}</span>
                     </button>
                   </li>
                 ))}
@@ -82,16 +70,66 @@ export function ProView({
           )}
         </div>
       ) : (
-        <div className="pro-view-tools">
+        <>
+          <div className="pro-workspace-header">
+            <div className="pro-workspace-title">
+              <p className="eyebrow">Pro workspace</p>
+              <h1>{repoName}</h1>
+              <p className="repo-path">{repoPath}</p>
+            </div>
+          </div>
+
+          <div className="pro-run-center">
+            <button
+              type="button"
+              className="primary-purple pro-run-btn"
+              disabled={isBusy}
+              onClick={onRunCheck}
+            >
+              <CheckIcon />
+              Run Pro check
+            </button>
+          </div>
+
+          <div className="pro-tools-grid">
+            <div className="pro-feature-card">
+              <div className="pro-feature-icon pro-feature-icon-alignment">
+                <AlignmentIcon />
+              </div>
+              <div className="pro-feature-body">
+                <div className="pro-feature-title-row">
+                  <span className="pro-feature-name">Alignment Review</span>
+                  <span className="pro-feature-auto-badge">auto</span>
+                </div>
+                <p className="pro-feature-desc">
+                  Claude reads your diff against what you asked the agent to build — returns a verdict, flags scope creep, and suggests fixes.
+                </p>
+              </div>
+            </div>
+
+            <div className="pro-feature-card">
+              <div className="pro-feature-icon pro-feature-icon-narrator">
+                <NarratorIcon />
+              </div>
+              <div className="pro-feature-body">
+                <div className="pro-feature-title-row">
+                  <span className="pro-feature-name">AgentNarrator</span>
+                  <span className="pro-feature-results-badge">results screen</span>
+                </div>
+                <p className="pro-feature-desc">
+                  Generates a commit message and PR description from your spec and check results. Available after every Pro check.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <ContextForgeCard
             status={contextForgeStatus}
             isGenerating={isGeneratingContext}
             error={contextForgeError}
             onGenerate={onGenerateContextFiles}
           />
-          <GitNarratorCard onRunCheck={onRunCheck} />
-          <AlignmentCard />
-        </div>
+        </>
       )}
     </section>
   );
@@ -113,37 +151,38 @@ function ContextForgeCard({
   const partialPresent = status?.hasCursorrules || status?.hasAgentsMd;
 
   return (
-    <div className="pro-tool-card pro-tool-card-forge">
-      <div className="pro-tool-header">
-        <div className="pro-tool-title-row">
-          <span className="contextforge-badge">ContextForge</span>
-          {status?.stack?.summary && (
-            <span className="contextforge-stack">{status.stack.summary}</span>
-          )}
+    <div className="pro-forge-card">
+      <div className="pro-forge-left">
+        <div className="pro-feature-icon pro-feature-icon-forge">
+          <ForgeIcon />
         </div>
-        <p className="pro-tool-desc">
-          Generates <code>.cursorrules</code> and <code>AGENTS.md</code> tailored to your detected tech stack.
-        </p>
-      </div>
-
-      {error && (
-        <p className="contextforge-error" role="alert">{error}</p>
-      )}
-
-      <div className="pro-tool-status">
-        {!detected ? (
-          <span className="pro-tool-status-dim">Stack not detected — run a check first or open a different project.</span>
-        ) : bothPresent ? (
-          <span className="contextforge-status-ok">Context files ready</span>
-        ) : partialPresent ? (
-          <span className="pro-tool-status-dim">Some context files missing</span>
-        ) : (
-          <span className="pro-tool-status-dim">No context files yet</span>
-        )}
+        <div className="pro-feature-body">
+          <div className="pro-feature-title-row">
+            <span className="pro-feature-name">AgentForge</span>
+            {detected && status?.stack?.summary && (
+              <span className="contextforge-stack">{status.stack.summary}</span>
+            )}
+          </div>
+          <p className="pro-feature-desc">
+            Generates <code>.cursorrules</code> and <code>AGENTS.md</code> tailored to your detected tech stack — so agents start with the right context.
+          </p>
+          {error && <p className="contextforge-error pro-forge-error" role="alert">{error}</p>}
+          <div className="pro-forge-status">
+            {!detected ? (
+              <span className="pro-forge-status-hint">Stack not detected — run a check first.</span>
+            ) : bothPresent ? (
+              <span className="contextforge-status-ok">Context files ready</span>
+            ) : partialPresent ? (
+              <span className="pro-forge-status-hint">Some context files missing</span>
+            ) : (
+              <span className="pro-forge-status-hint">No context files yet</span>
+            )}
+          </div>
+        </div>
       </div>
 
       {detected && (
-        <div className="contextforge-actions">
+        <div className="pro-forge-action">
           <button
             type="button"
             className="secondary contextforge-btn"
@@ -158,9 +197,9 @@ function ContextForgeCard({
             ) : bothPresent ? (
               "Regenerate"
             ) : partialPresent ? (
-              "Regenerate context files"
+              "Regenerate"
             ) : (
-              "Generate context files"
+              "Generate"
             )}
           </button>
         </div>
@@ -169,77 +208,34 @@ function ContextForgeCard({
   );
 }
 
-function GitNarratorCard({ onRunCheck }: { onRunCheck: () => void }) {
+function CheckIcon() {
   return (
-    <div className="pro-tool-card pro-tool-card-narrator">
-      <div className="pro-tool-header">
-        <div className="pro-tool-title-row">
-          <span className="pro-tool-badge pro-tool-badge-narrator">GitNarrator</span>
-        </div>
-        <p className="pro-tool-desc">
-          Generates a commit message and PR description from your diff and readiness report.
-        </p>
-      </div>
-      <div className="pro-tool-status">
-        <span className="pro-tool-status-dim">Available from the Results screen after a readiness check.</span>
-      </div>
-      <div className="contextforge-actions">
-        <button
-          type="button"
-          className="secondary contextforge-btn"
-          onClick={onRunCheck}
-        >
-          Run a readiness check
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function AlignmentCard() {
-  return (
-    <div className="pro-tool-card pro-tool-card-alignment">
-      <div className="pro-tool-header">
-        <div className="pro-tool-title-row">
-          <span className="pro-tool-badge pro-tool-badge-alignment">Alignment Review</span>
-        </div>
-        <p className="pro-tool-desc">
-          Checks whether the AI's changes match what you asked for — catches scope creep, missing pieces, and hallucinated logic.
-        </p>
-      </div>
-      <div className="pro-tool-status">
-        <span className="contextforge-status-ok">Included automatically in every readiness check</span>
-      </div>
-    </div>
-  );
-}
-
-function SparkIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        d="M8 1.8 9.16 5l3.06 1.14L9.16 7.3 8 10.5 6.84 7.3 3.78 6.14 6.84 5z"
-        fill="currentColor"
-      />
+    <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <path d="M2 6.5l2.5 2.5 5.5-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function FolderProIcon() {
+function AlignmentIcon() {
   return (
-    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <path
-        d="M6 11C6 9.34 7.34 8 9 8h6.5c.8 0 1.56.32 2.12.88l2 2c.2.2.47.32.76.32H31c1.66 0 3 1.34 3 3v13c0 1.66-1.34 3-3 3H9a3 3 0 0 1-3-3V11Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M20 18v6M17 21h6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M8 1.5 9.4 5.1l3.7 1.4-3.7 1.4L8 13.5 6.6 7.9 2.9 6.5l3.7-1.4z" fill="currentColor" opacity=".9" />
+    </svg>
+  );
+}
+
+function NarratorIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3 4h10M3 7h7M3 10h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ForgeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.22 4.22l2.12 2.12M9.66 9.66l2.12 2.12M4.22 11.78l2.12-2.12M9.66 6.34l2.12-2.12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }

@@ -1579,7 +1579,7 @@ button.primary-purple:active:not(:disabled) {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* ── GitNarrator card ─────────────────────────────────────────────────────── */
+/* ── AgentNarrator card ──────────────────────────────────────────────────── */
 
 .narrator-card {
   border-color: rgba(96, 165, 250, 0.16);
@@ -1736,7 +1736,7 @@ button.primary-purple:active:not(:disabled) {
   font-family: var(--font-mono);
 }
 
-/* ── ContextForge banner ─────────────────────────────────────────────────── */
+/* ── AgentForge banner ───────────────────────────────────────────────────── */
 
 .contextforge-banner {
   background: rgba(16, 185, 129, 0.05);
@@ -3029,87 +3029,62 @@ code {
 
 /* ── Pro View ─────────────────────────────────────────────────────────────── */
 
-.pro-view-header {
-  padding-bottom: 0.5rem;
-}
+/* ── Pro workspace — empty state ─────────────────────────────────────────── */
 
-.pro-view-title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.pro-view-title-row .pro-badge {
-  margin-top: 0.5rem;
-  flex-shrink: 0;
-}
-
-.pro-view-no-project-hint {
-  margin: 0.5rem 0 0;
-  font-size: 0.9rem;
-  color: #8a95b4;
-}
-
-.pro-view-empty {
+.pro-empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 3.5rem 1rem;
-  gap: 0.65rem;
+  gap: 0;
+  padding-top: 1rem;
 }
 
-.pro-view-empty-icon {
-  color: rgba(139, 92, 246, 0.4);
-  margin-bottom: 0.25rem;
+.pro-empty-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-bottom: 2rem;
 }
 
-.pro-view-empty-label {
+.pro-empty-content h1 {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #c8d4f0;
 }
 
-.pro-view-empty-sub {
-  margin: 0 0 0.6rem;
-  font-size: 0.88rem;
+.pro-empty-sub {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
   color: #8a95b4;
-  max-width: 24rem;
-  line-height: 1.5;
+  max-width: 26rem;
+  line-height: 1.55;
 }
 
-.pro-view-recents {
-  width: 100%;
-  margin-top: 1.75rem;
-  text-align: left;
+.pro-recents {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 1.5rem;
 }
 
-.pro-view-recents-label {
-  margin: 0 0 0.6rem;
-  font-size: 0.78rem;
+.pro-recents-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #5a6480;
+  color: #4a5470;
 }
 
-.pro-view-recents-list {
+.pro-recents-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
-.pro-view-recent-item {
+.pro-recent-item {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 0.6rem 0.75rem;
+  padding: 0.55rem 0.7rem;
   border-radius: 9px;
   background: transparent;
   border: 1px solid transparent;
@@ -3119,115 +3094,286 @@ code {
   transition: background 120ms ease, border-color 120ms ease;
 }
 
-.pro-view-recent-item:hover:not(:disabled) {
+.pro-recent-item:hover:not(:disabled) {
   background: rgba(139, 92, 246, 0.07);
-  border-color: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.14);
 }
 
-.pro-view-recent-item:disabled {
-  opacity: 0.5;
+.pro-recent-item:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
-.pro-view-recent-name {
-  font-size: 0.9rem;
+.pro-recent-name {
+  font-size: 0.88rem;
   font-weight: 500;
   color: #c8d4f0;
 }
 
-.pro-view-recent-path {
-  font-size: 0.78rem;
-  color: #5a6480;
+.pro-recent-path {
+  font-size: 0.76rem;
+  color: #4a5470;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
 
-.pro-view-tools {
-  display: grid;
-  gap: 1rem;
-  margin-top: 1.25rem;
+/* ── Pro workspace — with project ────────────────────────────────────────── */
+
+.pro-workspace-header {
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 0;
 }
 
-.pro-tool-card {
-  padding: 1.2rem 1.3rem;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #0e0e16;
+.pro-workspace-title {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
-.pro-tool-card-forge {
-  border-color: rgba(16, 185, 129, 0.2);
-  background: rgba(16, 185, 129, 0.03);
+.pro-workspace-title h1 {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.pro-tool-card-narrator {
-  border-color: rgba(251, 191, 36, 0.18);
-  background: rgba(251, 191, 36, 0.02);
+.pro-workspace-title .repo-path {
+  margin: 0;
 }
 
-.pro-tool-card-alignment {
-  border-color: rgba(139, 92, 246, 0.2);
-  background: rgba(139, 92, 246, 0.03);
-}
-
-.pro-tool-header {
+.pro-run-center {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  justify-content: center;
+  padding: 2rem 0 1.5rem;
 }
 
-.pro-tool-title-row {
+@keyframes pro-run-pulse {
+  0%, 100% { box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px rgba(124, 58, 237, 0.22),
+    0 4px 20px rgba(109, 40, 217, 0.48),
+    0 0 36px rgba(124, 58, 237, 0.18),
+    0 1px 4px rgba(0, 0, 0, 0.35);
+  }
+  50% { box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px rgba(139, 92, 246, 0.32),
+    0 4px 24px rgba(124, 58, 237, 0.6),
+    0 0 48px rgba(139, 92, 246, 0.26),
+    0 1px 4px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.pro-run-btn {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.55rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 55%, #4f46e5 100%);
+  border-color: rgba(167, 139, 250, 0.38);
+  animation: pro-run-pulse 3s ease-in-out infinite;
 }
 
-.pro-tool-desc {
+.pro-run-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.55s ease;
+}
+
+.pro-run-btn:hover:not(:disabled)::before {
+  transform: translateX(100%);
+}
+
+.pro-run-btn:hover:not(:disabled) {
+  animation: none;
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 55%, #6366f1 100%);
+  border-color: rgba(167, 139, 250, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 0 1px rgba(139, 92, 246, 0.3),
+    0 8px 32px rgba(124, 58, 237, 0.6),
+    0 0 56px rgba(139, 92, 246, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.pro-run-btn:active:not(:disabled) {
+  animation: none;
+  transform: translateY(0);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(124, 58, 237, 0.22),
+    0 2px 10px rgba(124, 58, 237, 0.35);
+}
+
+.pro-run-btn:disabled {
+  animation: none;
+  opacity: 0.5;
+}
+
+/* ── Feature cards (Alignment + AgentNarrator) ───────────────────────────── */
+
+.pro-tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pro-feature-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.pro-feature-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pro-feature-icon-alignment {
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+.pro-feature-icon-narrator {
+  background: rgba(99, 179, 237, 0.1);
+  border: 1px solid rgba(99, 179, 237, 0.18);
+  color: #90cdf4;
+}
+
+.pro-feature-icon-forge {
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.18);
+  color: #6ee7b7;
+}
+
+.pro-feature-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.pro-feature-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pro-feature-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #d4ddf5;
+}
+
+.pro-feature-auto-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.15em 0.5em;
+  border-radius: 4px;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  color: #6ee7b7;
+}
+
+.pro-feature-results-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.15em 0.5em;
+  border-radius: 4px;
+  background: rgba(99, 179, 237, 0.08);
+  border: 1px solid rgba(99, 179, 237, 0.18);
+  color: #90cdf4;
+}
+
+.pro-feature-desc {
   margin: 0;
-  font-size: 0.86rem;
-  color: #8a95b4;
+  font-size: 0.83rem;
+  color: #7a87a8;
   line-height: 1.5;
 }
 
-.pro-tool-desc code {
+/* ── AgentForge card ─────────────────────────────────────────────────────── */
+
+.pro-forge-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 13px;
+  border: 1px solid rgba(52, 211, 153, 0.14);
+  background: rgba(52, 211, 153, 0.02);
+}
+
+.pro-forge-left {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+}
+
+.pro-forge-action {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.pro-forge-status {
+  margin-top: 0.3rem;
   font-size: 0.82rem;
+}
+
+.pro-forge-status-hint {
+  color: #5a6a8a;
+}
+
+.pro-forge-error {
+  margin-top: 0.25rem;
+  font-size: 0.82rem;
+}
+
+.pro-feature-desc code {
+  font-size: 0.8rem;
   background: rgba(255, 255, 255, 0.07);
   padding: 0.1em 0.35em;
   border-radius: 4px;
   color: #c8d4f0;
-}
-
-.pro-tool-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 0.2em 0.55em;
-  border-radius: 5px;
-  flex-shrink: 0;
-}
-
-.pro-tool-badge-narrator {
-  background: rgba(251, 191, 36, 0.12);
-  color: #fbbf24;
-}
-
-.pro-tool-badge-alignment {
-  background: rgba(139, 92, 246, 0.15);
-  color: #c4b5fd;
-}
-
-.pro-tool-status {
-  font-size: 0.84rem;
-}
-
-.pro-tool-status-dim {
-  color: #6b7a9f;
 }
 
 /* ── Sidebar Pro button ───────────────────────────────────────────────────── */

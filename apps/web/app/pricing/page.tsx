@@ -30,7 +30,7 @@ const FREE_FEATURES = [
     desc: "All check results are saved locally. Browse past verdicts per project at any time.",
   },
   {
-    title: "ContextForge detection",
+    title: "AgentForge detection",
     desc: "AgentReady detects your project's tech stack and surfaces which AI context files are present.",
   },
 ];
@@ -61,11 +61,11 @@ const PRO_FEATURES = [
     desc: "Each Pro check returns specific, actionable guidance on what to correct before committing.",
   },
   {
-    title: "GitNarrator",
+    title: "AgentNarrator",
     desc: "Generate a commit message and PR description from the check's spec and results — copy it straight into your terminal or GitHub.",
   },
   {
-    title: "ContextForge generation",
+    title: "AgentForge generation",
     desc: "Generate AI context files for your stack — writes .cursorrules and AGENTS.md to your repo so agents have the right context from the start.",
   },
 ];
@@ -85,7 +85,7 @@ const PRO_CHECKS = [
   ["Did it go beyond what was requested?", "Changes that exceed the scope of the feature, including refactors you didn't ask for."],
   ["Does the UI copy match the feature?", "Text in the UI that contradicts or misrepresents the feature being built."],
   ["What specifically needs fixing?", "A list of targeted suggestions for each alignment issue found in the diff."],
-  ["Commit message & PR description", "GitNarrator generates these from the check's spec and results."],
+  ["Commit message & PR description", "AgentNarrator generates these from the check's spec and results."],
 ];
 
 export default function PricingPage() {
@@ -295,12 +295,12 @@ export default function PricingPage() {
                 a: "You tell AgentReady what you asked the agent to build. After the check, Claude reads the diff against that description and returns a verdict: aligned or not aligned, a confidence level, a summary, and a list of specific issues to fix.",
               },
               {
-                q: "What is GitNarrator?",
-                a: "GitNarrator generates a commit message and PR description from the check's spec and results. It's a Pro feature — once a check completes, you can generate both and copy them straight to your terminal or GitHub.",
+                q: "What is AgentNarrator?",
+                a: "AgentNarrator generates a commit message and PR description from the check's spec and results. It's a Pro feature — once a check completes, you can generate both and copy them straight to your terminal or GitHub.",
               },
               {
-                q: "What is ContextForge?",
-                a: "ContextForge detects your project's tech stack and generates AI context files — .cursorrules and AGENTS.md — so that Cursor and other agents have the right context from the start. It's a Pro feature.",
+                q: "What is AgentForge?",
+                a: "AgentForge detects your project's tech stack and generates AI context files — .cursorrules and AGENTS.md — so that Cursor and other agents have the right context from the start. It's a Pro feature.",
               },
               {
                 q: "Can I cancel Pro at any time?",

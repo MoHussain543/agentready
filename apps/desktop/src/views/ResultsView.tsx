@@ -74,7 +74,7 @@ export function ResultsView({
         raw === "SESSION_EXPIRED"
           ? "Session expired. Open Settings to sign in again."
           : raw.includes("Command generate_narrative not found")
-            ? "Commit generation requires a fresh build — restart the app to enable GitNarrator."
+            ? "Commit generation requires a fresh build — restart the app to enable AgentNarrator."
             : raw,
       );
     } finally {
@@ -177,7 +177,7 @@ export function ResultsView({
           <h2>Commit message</h2>
           <p className="hint">AI-generated from this check's spec and results.</p>
         </div>
-        <span className="narrator-badge">GitNarrator</span>
+        <span className="narrator-badge">AgentNarrator</span>
       </div>
 
       {narrativeError && (

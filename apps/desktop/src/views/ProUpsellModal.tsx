@@ -56,7 +56,7 @@ export function ProUpsellModal({ isSignedIn, onClose, onSignIn }: ProUpsellModal
               <ForgeIcon />
             </span>
             <div className="pro-upsell-feature-copy">
-              <strong>ContextForge</strong>
+              <strong>AgentForge</strong>
               <p>Generates <code>.cursorrules</code> and <code>AGENTS.md</code> tailored to your detected stack — helps AI agents stay on track from the first prompt.</p>
             </div>
           </li>
@@ -65,7 +65,7 @@ export function ProUpsellModal({ isSignedIn, onClose, onSignIn }: ProUpsellModal
               <NarratorIcon />
             </span>
             <div className="pro-upsell-feature-copy">
-              <strong>GitNarrator</strong>
+              <strong>AgentNarrator</strong>
               <p>Generates a commit message and PR description from your diff and readiness report — skip the context-switching.</p>
             </div>
           </li>

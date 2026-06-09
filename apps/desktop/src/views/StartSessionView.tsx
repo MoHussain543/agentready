@@ -119,7 +119,7 @@ export function StartSessionView({
             <span className="session-pro-banner-icon session-pro-banner-icon-check">
               <CheckMarkIcon />
             </span>
-            <span>GitNarrator</span>
+            <span>AgentNarrator</span>
           </div>
         </div>
       )}
@@ -316,7 +316,7 @@ function ContextForgeBanner({
     <div className="contextforge-banner">
       <div className="contextforge-header">
         <div className="contextforge-title-row">
-          <span className="contextforge-badge">ContextForge</span>
+          <span className="contextforge-badge">AgentForge</span>
           <span className="contextforge-stack">{status.stack.summary}</span>
           {!isPro && <span className="contextforge-pro-tag">Pro</span>}
         </div>
