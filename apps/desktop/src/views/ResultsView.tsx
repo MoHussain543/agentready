@@ -318,7 +318,6 @@ export function ResultsView({
   return (
     <section className="view view-wide results-view">
       <div className={`verdict-hero verdict-hero-${report.verdict.toLowerCase()}`}>
-        <p className="eyebrow verdict-hero-repo">{repoPath}</p>
         <span className="verdict-hero-label">{verdictLabel(report.verdict)}</span>
         <h1 className="verdict-hero-title">{session.title || session.description.split("\n")[0].slice(0, 120) || "Untitled check"}</h1>
         {report.verdictExplanation && (

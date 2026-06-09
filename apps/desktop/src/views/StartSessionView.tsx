@@ -61,10 +61,6 @@ export function StartSessionView({
   const canRun = session.description.trim().length > 0 && !isRunning;
 
   const testCommandMissing = runTests && testCommand.trim().length === 0;
-  const normalizedTestCwd = testCommandCwd.trim().replace(/^\.\/+/, "");
-  const resolvedTestCwd = normalizedTestCwd.length > 0
-    ? `${repoPath}/${normalizedTestCwd}`
-    : repoPath;
 
   if (isRunning) {
     const repoName = repoPath.split("/").filter(Boolean).pop() ?? repoPath;
@@ -89,7 +85,6 @@ export function StartSessionView({
           <p className="eyebrow">Pre-commit check</p>
         )}
         <h1>Check your diff</h1>
-        <p className="repo-path">{repoPath}</p>
       </header>
 
       {isPro && (
@@ -216,9 +211,6 @@ export function StartSessionView({
                     onChange={(e) => onTestCommandCwdChange(e.target.value)}
                   />
                 </label>
-                <p className="hint">
-                  Tests will run from <code>{resolvedTestCwd}</code>. Leave directory blank for repo root.
-                </p>
                 {testCommandMissing && (
                   <p className="inline-warning" role="alert">
                     No test command saved. Enter one above or uncheck "Run tests" to skip.

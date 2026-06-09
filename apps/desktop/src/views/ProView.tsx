@@ -75,7 +75,6 @@ export function ProView({
             <div className="pro-workspace-title">
               <p className="eyebrow">Pro workspace</p>
               <h1>{repoName}</h1>
-              <p className="repo-path">{repoPath}</p>
             </div>
           </div>
 
