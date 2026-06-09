@@ -55,9 +55,10 @@ export function StartSessionView({
 }: StartSessionViewProps) {
   const latestVerdict = latestSession?.latestReportVerdict ?? null;
   const lastRunAt = latestSession?.lastReadinessRunAt ?? null;
-  const isFirstRun = !latestVerdict && !lastRunAt;
+  const [testsExpanded, setTestsExpanded] = useState(runTests);
+
   const isNoDiff = error?.includes("No uncommitted changes to check yet");
-  const canRun = session.title.trim().length > 0 && session.description.trim().length > 0 && !isRunning;
+  const canRun = session.description.trim().length > 0 && !isRunning;
 
   const testCommandMissing = runTests && testCommand.trim().length === 0;
   const normalizedTestCwd = testCommandCwd.trim().replace(/^\.\/+/, "");
@@ -70,19 +71,58 @@ export function StartSessionView({
     return (
       <RunningOverlay
         repoName={repoName}
-        specTitle={session.title.trim()}
+        specTitle={session.title.trim() || session.description.split("\n")[0].slice(0, 60).trim()}
         withTests={runTests && testCommand.trim().length > 0}
       />
     );
   }
 
   return (
-    <section className="view session-view">
+    <section className={`view session-view${isPro ? " session-view-pro" : ""}`}>
       <header className="view-header">
-        <p className="eyebrow">Pre-commit check</p>
+        {isPro ? (
+          <p className="eyebrow session-eyebrow-pro">
+            <span className="session-pro-dot" aria-hidden="true" />
+            Pro check
+          </p>
+        ) : (
+          <p className="eyebrow">Pre-commit check</p>
+        )}
         <h1>Check your diff</h1>
         <p className="repo-path">{repoPath}</p>
       </header>
+
+      {isPro && (
+        <div className="session-pro-banner">
+          <div className="session-pro-banner-item">
+            <span className="session-pro-banner-icon session-pro-banner-icon-check">
+              <CheckMarkIcon />
+            </span>
+            <span>Diff &amp; security analysis</span>
+          </div>
+          <span className="session-pro-banner-divider" aria-hidden="true" />
+          <div className="session-pro-banner-item session-pro-banner-item-highlight">
+            <span className="session-pro-banner-icon session-pro-banner-icon-ai">
+              <SparkSmallIcon />
+            </span>
+            <span>AI Alignment Review</span>
+          </div>
+          <span className="session-pro-banner-divider" aria-hidden="true" />
+          <div className="session-pro-banner-item">
+            <span className="session-pro-banner-icon session-pro-banner-icon-check">
+              <CheckMarkIcon />
+            </span>
+            <span>Repair prompt</span>
+          </div>
+          <span className="session-pro-banner-divider" aria-hidden="true" />
+          <div className="session-pro-banner-item">
+            <span className="session-pro-banner-icon session-pro-banner-icon-check">
+              <CheckMarkIcon />
+            </span>
+            <span>GitNarrator</span>
+          </div>
+        </div>
+      )}
 
       {error && !isNoDiff && (
         <div className="error-banner" role="alert">
@@ -100,31 +140,23 @@ export function StartSessionView({
         </div>
       )}
 
-      <div className="card card-primary">
-        <h2>What are you building?</h2>
+      <div className={`card${isPro ? " card-primary" : " card-session-free"}`}>
+        <div className="session-card-header">
+          <h2>What are you building?</h2>
+          {isPro && <span className="session-ai-tag">feeds alignment review</span>}
+        </div>
         <p className="hint">
-          {isFirstRun
-            ? "First check for this repo. Give the feature a title, then describe what you asked the AI to build."
+          {isPro
+            ? "Describe what you asked the AI to build — used for the repair prompt and AI alignment review."
             : "Describe what you asked the AI to build — used for the repair prompt and, in Pro, for alignment review."}
         </p>
         <label className="field">
-          <span>Title</span>
-          <input
-            type="text"
-            value={session.title}
-            placeholder="Add 404 response for missing users"
-            disabled={isRunning}
-            onChange={(e) =>
-              onSessionChange({ ...session, title: e.target.value })
-            }
-          />
-        </label>
-        <label className="field">
-          <span>Details</span>
           <textarea
-            rows={5}
+            rows={7}
             value={session.description}
-            placeholder="Describe what you asked the AI to build in more detail — context here helps the repair prompt and alignment review."
+            placeholder={isPro
+              ? "e.g. Add a 404 response for missing users. The API should return JSON with an error message and status 404 when a user ID is not found."
+              : "e.g. Add a 404 response for missing users — describe what you asked the AI to build in enough detail to guide the repair prompt."}
             disabled={isRunning}
             onChange={(e) =>
               onSessionChange({ ...session, description: e.target.value })
@@ -133,51 +165,68 @@ export function StartSessionView({
         </label>
       </div>
 
-      <div className="card card-secondary">
-        <div className="tests-card-header">
+      <div className="card card-secondary tests-card">
+        <button
+          type="button"
+          className="tests-card-toggle"
+          disabled={isRunning}
+          aria-expanded={testsExpanded}
+          onClick={() => setTestsExpanded((v) => !v)}
+        >
           <h2>Tests</h2>
-          <label className="checkbox-field checkbox-field-inline">
-            <input
-              type="checkbox"
-              checked={runTests}
-              disabled={isRunning}
-              onChange={(e) => onRunTestsChange(e.target.checked)}
-            />
-            <span>Run tests with this check</span>
-          </label>
-        </div>
+          <span className="tests-card-toggle-meta">
+            {runTests && testCommand.trim() ? testCommand.trim() : "not configured"}
+          </span>
+          <span className="check-chevron" aria-hidden="true">
+            {testsExpanded ? "▾" : "▸"}
+          </span>
+        </button>
 
-        {runTests && (
-          <>
-            <label className="field">
-              <span>Test command</span>
+        {testsExpanded && (
+          <div className="tests-card-body">
+            <label className="checkbox-field checkbox-field-inline">
               <input
-                type="text"
-                value={testCommand}
-                placeholder="npm test"
+                type="checkbox"
+                checked={runTests}
                 disabled={isRunning}
-                onChange={(e) => onTestCommandChange(e.target.value)}
+                onChange={(e) => onRunTestsChange(e.target.checked)}
               />
+              <span>Run tests with this check</span>
             </label>
-            <label className="field">
-              <span>Test working directory</span>
-              <input
-                type="text"
-                value={testCommandCwd}
-                placeholder="apps/desktop"
-                disabled={isRunning}
-                onChange={(e) => onTestCommandCwdChange(e.target.value)}
-              />
-            </label>
-            <p className="hint">
-              Tests will run from <code>{resolvedTestCwd}</code>. Leave directory blank for repo root.
-            </p>
-            {testCommandMissing && (
-              <p className="inline-warning" role="alert">
-                No test command saved. Enter one above or uncheck "Run tests" to skip.
-              </p>
+
+            {runTests && (
+              <>
+                <label className="field">
+                  <span>Test command</span>
+                  <input
+                    type="text"
+                    value={testCommand}
+                    placeholder="npm test"
+                    disabled={isRunning}
+                    onChange={(e) => onTestCommandChange(e.target.value)}
+                  />
+                </label>
+                <label className="field">
+                  <span>Test working directory</span>
+                  <input
+                    type="text"
+                    value={testCommandCwd}
+                    placeholder="apps/desktop"
+                    disabled={isRunning}
+                    onChange={(e) => onTestCommandCwdChange(e.target.value)}
+                  />
+                </label>
+                <p className="hint">
+                  Tests will run from <code>{resolvedTestCwd}</code>. Leave directory blank for repo root.
+                </p>
+                {testCommandMissing && (
+                  <p className="inline-warning" role="alert">
+                    No test command saved. Enter one above or uncheck "Run tests" to skip.
+                  </p>
+                )}
+              </>
             )}
-          </>
+          </div>
         )}
       </div>
 
@@ -211,6 +260,15 @@ export function StartSessionView({
         </div>
       )}
 
+      {!isPro && (
+        <div className="session-free-upsell">
+          <span className="session-free-upsell-text">
+            <LockIcon /> AI Alignment Review not included — checks whether the AI built what you asked
+          </span>
+          <span className="session-free-upsell-cta">Upgrade to Pro</span>
+        </div>
+      )}
+
       <div className="actions">
         <button
           type="button"
@@ -226,7 +284,9 @@ export function StartSessionView({
           disabled={!canRun}
           onClick={onRunCheck}
         >
-          {runTests ? "Run check with tests" : "Run readiness check"}
+          {isPro
+            ? runTests ? "Run Pro check with tests" : "Run Pro check"
+            : runTests ? "Run check with tests" : "Run readiness check"}
         </button>
       </div>
     </section>
@@ -307,6 +367,34 @@ function ContextForgeBanner({
         </div>
       )}
     </div>
+  );
+}
+
+function SparkSmallIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 1.8 9.16 5l3.06 1.14L9.16 7.3 8 10.5 6.84 7.3 3.78 6.14 6.84 5z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function CheckMarkIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <path d="M2.5 6l2.5 2.5 4.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <rect x="2" y="5.5" width="8" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M4 5.5V3.5a2 2 0 0 1 4 0v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
   );
 }
 

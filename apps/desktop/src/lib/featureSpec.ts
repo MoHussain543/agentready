@@ -83,12 +83,17 @@ const RISK_TERMS = [
 
 const MAX_EXPECTED_KEYWORDS = 12;
 
+function deriveTitleFromDescription(description: string): string {
+  const firstLine = description.split("\n")[0].trim();
+  return firstLine.slice(0, 60).replace(/[.!?]+$/, "").trim();
+}
+
 export function buildFeatureSpec(
   session: FeatureSessionInput,
   previousSpec?: FeatureSpec | null,
 ): FeatureSpec {
-  const title = session.title.trim();
   const description = session.description.trim();
+  const title = session.title.trim() || deriveTitleFromDescription(description);
   const combined = `${title} ${description}`;
   const now = new Date().toISOString();
 

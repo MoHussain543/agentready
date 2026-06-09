@@ -47,12 +47,14 @@ export async function runReadinessCheck(
   session: FeatureSessionInput,
   featureSpec?: FeatureSpec,
   testOptions?: TestExecutionOptions,
+  userToken?: string | null,
 ): Promise<ReadinessReport> {
   const request = buildEngineRequest(repoPath, session, featureSpec, testOptions);
 
   try {
     const report = await invoke<ReadinessReportWire>("run_readiness", {
       request,
+      userToken: userToken ?? null,
     });
     return normalizeReport(report);
   } catch (error) {

@@ -10,7 +10,11 @@ use crate::models::{EngineError, EngineRequest, EngineResponse, ReadinessReport}
 #[cfg(test)]
 const DEFAULT_CHECK_SUITE: &str = "free-v1-precommit";
 
-pub async fn run_readiness(app: &tauri::AppHandle, request: EngineRequest) -> Result<ReadinessReport, String> {
+pub async fn run_readiness(
+    app: &tauri::AppHandle,
+    request: EngineRequest,
+    user_token: Option<String>,
+) -> Result<ReadinessReport, String> {
     validate_request(&request)?;
 
     let app_clone = app.clone();
@@ -31,7 +35,7 @@ pub async fn run_readiness(app: &tauri::AppHandle, request: EngineRequest) -> Re
         return Err(format!("{}: {}", error.code, error.message));
     };
 
-    let user_token = crate::auth::load_token(app);
+    let user_token = user_token.or_else(|| crate::auth::load_token(app));
     crate::pro_review::run_if_eligible(&request, &mut report, user_token).await;
 
     Ok(report)

@@ -103,7 +103,7 @@ export interface ReadinessReport {
   proReview?: ProReview;
 }
 
-export type AppScreen = "home" | "session" | "results" | "reports";
+export type AppScreen = "home" | "session" | "results" | "reports" | "pro";
 
 export interface AppState {
   screen: AppScreen;

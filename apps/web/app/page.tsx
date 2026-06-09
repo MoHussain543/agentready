@@ -14,6 +14,9 @@ export default function Home() {
             <span className="font-bold text-[17px] tracking-tight text-white">AgentReady</span>
           </Link>
           <div className="flex items-center gap-4">
+            <Link href="/pricing" className="text-sm text-[#9aa5c4] hover:text-white transition-colors">
+              Pricing
+            </Link>
             <SignedOut>
               <Link href="/sign-in" className="text-sm text-[#9aa5c4] hover:text-white transition-colors">
                 Sign in
@@ -309,6 +312,7 @@ export default function Home() {
           </Link>
           <p className="text-sm text-[#6b7a9f]">© {new Date().getFullYear()} AgentReady. All rights reserved.</p>
           <div className="flex gap-6">
+            <Link href="/pricing" className="text-sm text-[#6b7a9f] hover:text-white transition-colors">Pricing</Link>
             <Link href="/sign-in" className="text-sm text-[#6b7a9f] hover:text-white transition-colors">Sign in</Link>
             <Link href="/sign-up" className="text-sm text-[#6b7a9f] hover:text-white transition-colors">Sign up</Link>
           </div>

@@ -37,10 +37,23 @@ export function isTokenExpired(claims: TokenClaims): boolean {
   return Date.now() / 1000 > claims.exp;
 }
 
-export async function getValidToken(): Promise<string> {
-  const token = await getAuthToken();
-  if (!token) throw new Error("SESSION_EXPIRED");
+function validateToken(token: string | null): string | null {
+  if (!token) return null;
   const claims = decodeTokenClaims(token);
-  if (!claims || isTokenExpired(claims)) throw new Error("SESSION_EXPIRED");
+  if (!claims || isTokenExpired(claims)) return null;
   return token;
+}
+
+export async function getValidToken(currentToken?: string | null): Promise<string> {
+  const inMemoryToken = validateToken(currentToken ?? null);
+  if (inMemoryToken) {
+    return inMemoryToken;
+  }
+
+  const storedToken = validateToken(await getAuthToken());
+  if (storedToken) {
+    return storedToken;
+  }
+
+  throw new Error("SESSION_EXPIRED");
 }

@@ -13,6 +13,7 @@ interface ResultsViewProps {
   isRunning: boolean;
   error: string | null;
   authToken: string | null;
+  isPro: boolean;
   onBack: () => void;
   onRerun: () => void;
 }
@@ -26,6 +27,7 @@ export function ResultsView({
   isRunning,
   error,
   authToken,
+  isPro,
   onBack,
   onRerun,
 }: ResultsViewProps) {
@@ -55,7 +57,7 @@ export function ResultsView({
     setIsGenerating(true);
     setNarrativeError(null);
     try {
-      const token = await getValidToken();
+      const token = await getValidToken(authToken);
       const result = await generateNarrative({
         featureTitle: session.title || "Untitled feature",
         featureDescription: session.description,
@@ -285,7 +287,11 @@ export function ResultsView({
         </div>
       ) : (
         <div className="narrator-empty">
-          {authToken ? (
+          {!isPro ? (
+            <p className="hint narrator-locked-hint">
+              <LockIcon /> Upgrade to Pro to generate commit messages and PR descriptions.
+            </p>
+          ) : authToken ? (
             <button
               type="button"
               className="primary-purple"
@@ -430,79 +436,6 @@ export function ResultsView({
         )}
       </div>
 
-      {report.proReview ? (
-        <div className="card pro-review-card">
-          <div className="pro-review-header">
-            <div>
-              <h2>Alignment review</h2>
-              <p className="pro-review-subtitle">
-                Did the agent actually build the right thing?
-              </p>
-            </div>
-            <span className="pro-badge">
-              <LockIcon />
-              Pro
-            </span>
-          </div>
-          {report.proReview.skipped ? (
-            <p className="hint">{report.proReview.skipReason ?? "Alignment review was skipped for this check."}</p>
-          ) : (
-            <ProReviewDetail review={report.proReview} />
-          )}
-        </div>
-      ) : (
-        <div className="card pro-review-card">
-          <div className="pro-review-header">
-            <div>
-              <h2>Alignment review</h2>
-              <p className="pro-review-subtitle">
-                Did the agent actually build the right thing?
-              </p>
-            </div>
-            <span className="pro-badge">
-              <LockIcon />
-              Pro
-            </span>
-          </div>
-          <ul className="pro-review-capabilities">
-            <li>
-              <span className="pro-cap-icon">◆</span>
-              <div>
-                <strong>Feature alignment</strong>
-                <p>Does the diff match what you asked the AI to build?</p>
-              </div>
-            </li>
-            <li>
-              <span className="pro-cap-icon">◆</span>
-              <div>
-                <strong>Unrelated file detection</strong>
-                <p>Changed files that appear outside the feature scope.</p>
-              </div>
-            </li>
-            <li>
-              <span className="pro-cap-icon">◆</span>
-              <div>
-                <strong>Scope creep</strong>
-                <p>Changes that go beyond what was requested.</p>
-              </div>
-            </li>
-            <li>
-              <span className="pro-cap-icon">◆</span>
-              <div>
-                <strong>Misleading UI copy</strong>
-                <p>Text added to the UI that doesn't match the requested feature.</p>
-              </div>
-            </li>
-          </ul>
-          <div className="pro-review-footer">
-            <p className="hint">Upgrade to Pro to unlock AI-powered alignment review.</p>
-            <button type="button" className="secondary" disabled>
-              Upgrade to Pro
-            </button>
-          </div>
-        </div>
-      )}
-
       {report.testResult && report.testResult.status !== "skip" && (
         <div className="card">
           <h2>Tests</h2>
@@ -533,6 +466,91 @@ export function ResultsView({
       </div>
 
       {repairPromptSection}
+
+      <div className="results-pro-divider">
+        <span className="results-pro-divider-label">
+          <SparkIcon /> Pro AI Analysis
+        </span>
+      </div>
+
+      {report.proReview ? (
+        <div className="card pro-review-card">
+          <div className="pro-review-header">
+            <div>
+              <h2>Alignment review</h2>
+              <p className="pro-review-subtitle">
+                Did the agent actually build the right thing?
+              </p>
+            </div>
+            <span className="pro-badge">
+              <LockIcon />
+              Pro
+            </span>
+          </div>
+          {report.proReview.skipped ? (
+            <p className="hint">{report.proReview.skipReason ?? "Alignment review was skipped for this check."}</p>
+          ) : (
+            <ProReviewDetail review={report.proReview} />
+          )}
+        </div>
+      ) : (
+        <div className={`card pro-review-card${!isPro ? " pro-review-card-locked" : ""}`}>
+          <div className="pro-review-header">
+            <div>
+              <h2>Alignment review</h2>
+              <p className="pro-review-subtitle">
+                Did the agent actually build the right thing?
+              </p>
+            </div>
+            <span className="pro-badge">
+              <LockIcon />
+              Pro
+            </span>
+          </div>
+          {!isPro ? (
+            <p className="hint pro-locked-hint">
+              <LockIcon /> Upgrade to Pro to unlock AI-powered alignment review — checks whether the AI actually built what you asked.
+            </p>
+          ) : (
+            <>
+              <ul className="pro-review-capabilities">
+                <li>
+                  <span className="pro-cap-icon">◆</span>
+                  <div>
+                    <strong>Feature alignment</strong>
+                    <p>Does the diff match what you asked the AI to build?</p>
+                  </div>
+                </li>
+                <li>
+                  <span className="pro-cap-icon">◆</span>
+                  <div>
+                    <strong>Unrelated file detection</strong>
+                    <p>Changed files that appear outside the feature scope.</p>
+                  </div>
+                </li>
+                <li>
+                  <span className="pro-cap-icon">◆</span>
+                  <div>
+                    <strong>Scope creep</strong>
+                    <p>Changes that go beyond what was requested.</p>
+                  </div>
+                </li>
+                <li>
+                  <span className="pro-cap-icon">◆</span>
+                  <div>
+                    <strong>Misleading UI copy</strong>
+                    <p>Text added to the UI that doesn't match the requested feature.</p>
+                  </div>
+                </li>
+              </ul>
+              <div className="pro-review-footer">
+                <p className="hint">Run a Pro check to see alignment review results.</p>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {narratorSection}
 
       <div className="actions">
@@ -700,6 +718,17 @@ function TestResultDetail({ testResult }: { testResult: TestResult }) {
       <span className={`status status-${status}`}>{status}</span>
       {message && <> — {message}</>}
     </p>
+  );
+}
+
+function SparkIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 1.8 9.16 5l3.06 1.14L9.16 7.3 8 10.5 6.84 7.3 3.78 6.14 6.84 5z"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
 

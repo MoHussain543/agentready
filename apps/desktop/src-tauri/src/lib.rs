@@ -14,8 +14,12 @@ use settings::AppSettings;
 use storage::{CurrentSession, ReportHistoryEntry, RepoSessionState};
 
 #[tauri::command]
-async fn run_readiness(app: tauri::AppHandle, request: EngineRequest) -> Result<ReadinessReport, String> {
-    engine::run_readiness(&app, request).await
+async fn run_readiness(
+    app: tauri::AppHandle,
+    request: EngineRequest,
+    user_token: Option<String>,
+) -> Result<ReadinessReport, String> {
+    engine::run_readiness(&app, request, user_token).await
 }
 
 #[tauri::command]
@@ -257,6 +261,14 @@ async fn open_sign_in(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn open_external_url(url: String) -> Result<(), String> {
+    if !url.starts_with("https://") {
+        return Err("Only HTTPS URLs are allowed.".to_string());
+    }
+    open_browser(&url)
+}
+
 fn open_browser(url: &str) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     std::process::Command::new("open")
@@ -381,6 +393,7 @@ pub fn run() {
             generate_narrative,
             get_staged_files,
             git_commit,
+            open_external_url,
             contextforge::check_context_forge_status,
             contextforge::generate_context_files,
         ])

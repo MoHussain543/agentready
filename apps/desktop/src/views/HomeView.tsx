@@ -26,12 +26,12 @@ export function HomeView({
   onOpenRecentProject,
 }: HomeViewProps) {
   const hasRecents = recentProjects.length > 0;
-  const proTitle = isPro ? "Pro review" : "Unlock Pro";
+  const proTitle = isPro ? "Pro workspace" : "Explore Pro";
   const proSubtitle = isPro
-    ? "Alignment review, ContextForge, and GitNarrator are active on this account."
+    ? "Open your premium workspace for alignment review, ContextForge, and GitNarrator."
     : isSignedIn
-      ? "AI alignment review, ContextForge, and GitNarrator. Open your account to upgrade."
-      : "AI alignment review, ContextForge, and GitNarrator. Sign in to unlock Pro.";
+      ? "Alignment review, ContextForge, and GitNarrator live here. Upgrade to unlock the workspace."
+      : "Alignment review, ContextForge, and GitNarrator live here. Sign in to explore Pro.";
   const proBadge = isPro ? "PRO" : "Locked";
 
   return (
@@ -49,7 +49,7 @@ export function HomeView({
           <p className="eyebrow">AgentReady</p>
           <h1>Catch risky AI code before you commit.</h1>
           <p className="subtitle">
-            Run a local readiness check, revisit saved reports, or unlock Pro for alignment review and agent workflow tools.
+            Run a local readiness check, revisit saved reports, or open the Pro workspace for premium review tools.
           </p>
         </div>
       </header>
@@ -62,11 +62,11 @@ export function HomeView({
           onClick={onOpenProject}
         >
           <span className="home-action-icon">
-            <FolderIcon />
+            <CheckIcon />
           </span>
           <span className="home-action-copy">
-            <strong>{isBusy ? "Opening..." : "Open project"}</strong>
-            <span>Choose a local git repository and run a pre-commit check on the current diff.</span>
+            <strong>{isBusy ? "Opening..." : "Run a check"}</strong>
+            <span>Open a local git repository and run the readiness workflow on the current diff.</span>
           </span>
         </button>
         <button
@@ -167,14 +167,22 @@ function formatRelativeTime(value: string): string {
   return new Date(value).toLocaleDateString();
 }
 
-function FolderIcon() {
+function CheckIcon() {
   return (
     <svg viewBox="0 0 16 16" aria-hidden="true">
       <path
-        d="M2 4.25C2 3.56 2.56 3 3.25 3h2.47c.33 0 .64.13.88.37l.76.76c.09.09.21.14.34.14h4.05c.69 0 1.25.56 1.25 1.25v5.23c0 .69-.56 1.25-1.25 1.25h-8.5C2.56 12 2 11.44 2 10.75z"
+        d="M8 1.9 3.2 3.8v3.62c0 2.76 1.84 5.24 4.8 6.68 2.96-1.44 4.8-3.92 4.8-6.68V3.8z"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m6.45 7.95 1.08 1.08 2.22-2.27"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>

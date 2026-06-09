@@ -14,6 +14,7 @@ interface ReportsViewProps {
   onBackToProjects: () => void;
   onOpenReport: (entry: ReportHistoryEntry) => void;
   onDeleteReport: (entry: ReportHistoryEntry) => void;
+  onDeleteAllReports: () => void;
 }
 
 export function ReportsView({
@@ -27,8 +28,10 @@ export function ReportsView({
   onBackToProjects,
   onOpenReport,
   onDeleteReport,
+  onDeleteAllReports,
 }: ReportsViewProps) {
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
 
   const handleConfirmDelete = (entry: ReportHistoryEntry) => {
     setConfirmingDelete(null);
@@ -98,6 +101,37 @@ export function ReportsView({
                 <h2>{selectedProject.repoName}</h2>
                 <p className="meta">{selectedProject.repoPath}</p>
               </div>
+              {reports.length > 0 && (
+                confirmingDeleteAll ? (
+                  <div className="delete-all-confirm">
+                    <span className="meta">Delete all {reports.length} reports?</span>
+                    <button
+                      type="button"
+                      className="delete-confirm-btn"
+                      disabled={isBusy}
+                      onClick={() => { setConfirmingDeleteAll(false); onDeleteAllReports(); }}
+                    >
+                      Delete all
+                    </button>
+                    <button
+                      type="button"
+                      className="delete-cancel-btn"
+                      onClick={() => setConfirmingDeleteAll(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="delete-all-btn"
+                    disabled={isBusy}
+                    onClick={() => setConfirmingDeleteAll(true)}
+                  >
+                    Delete all
+                  </button>
+                )
+              )}
             </div>
 
             {reports.length === 0 ? (

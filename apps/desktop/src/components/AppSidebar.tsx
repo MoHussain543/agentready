@@ -1,8 +1,10 @@
 import sidebarLogo from "../assets/agentready-glyph.png";
 import type { AppScreen } from "../types";
 
-function activeSection(screen: AppScreen): "home" | "reports" {
-  return screen === "reports" ? "reports" : "home";
+function activeSection(screen: AppScreen): "home" | "reports" | "pro" {
+  if (screen === "reports") return "reports";
+  if (screen === "pro") return "pro";
+  return "home";
 }
 
 interface AppSidebarProps {
@@ -12,6 +14,7 @@ interface AppSidebarProps {
   versionLabel: string;
   onNavigateHome: () => void;
   onNavigateReports: () => void;
+  onOpenPro: () => void;
   onOpenHelp: () => void;
   onOpenSettings: () => void;
   onSignIn: () => void;
@@ -24,6 +27,7 @@ export function AppSidebar({
   versionLabel,
   onNavigateHome,
   onNavigateReports,
+  onOpenPro,
   onOpenHelp,
   onOpenSettings,
   onSignIn,
@@ -55,6 +59,15 @@ export function AppSidebar({
         >
           <HistoryIcon />
           <span className="sidebar-nav-label">History</span>
+        </button>
+        <button
+          type="button"
+          className={`sidebar-nav-item sidebar-pro-btn${section === "pro" ? " active" : ""}${isPro ? " sidebar-pro-btn-active" : ""}`}
+          aria-label="Pro tools"
+          onClick={onOpenPro}
+        >
+          <SparkIcon />
+          <span className="sidebar-nav-label">Pro</span>
         </button>
       </nav>
 
@@ -153,6 +166,27 @@ function AccountIcon() {
         stroke="currentColor"
         strokeWidth="1.3"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function SparkIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 1.8 9.16 5l3.06 1.14L9.16 7.3 8 10.5 6.84 7.3 3.78 6.14 6.84 5z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.15"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m12 9.6.54 1.48 1.46.55-1.46.55L12 13.65l-.54-1.47-1.46-.55 1.46-.55z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.05"
+        strokeLinejoin="round"
       />
     </svg>
   );

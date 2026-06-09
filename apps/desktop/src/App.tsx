@@ -28,6 +28,8 @@ import type { ReportHistoryEntry } from "./lib/storage";
 import { AppSidebar } from "./components/AppSidebar";
 import { HelpModal } from "./views/HelpModal";
 import { HomeView } from "./views/HomeView";
+import { ProUpsellModal } from "./views/ProUpsellModal";
+import { ProView } from "./views/ProView";
 import { ReportsView } from "./views/ReportsView";
 import { ResultsView } from "./views/ResultsView";
 import { SettingsModal } from "./views/SettingsModal";
@@ -89,6 +91,7 @@ function App() {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isProUpsellOpen, setIsProUpsellOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -150,7 +153,7 @@ function App() {
     }
   };
 
-  const openRepo = async (repoPath: string) => {
+  const openRepo = async (repoPath: string, targetScreen: "session" | "pro" = "session") => {
     const trimmedRepoPath = repoPath.trim();
     if (!trimmedRepoPath) {
       return;
@@ -161,16 +164,13 @@ function App() {
 
     try {
       const repoState = await initRepoStorage(trimmedRepoPath);
-      const hydratedSession = repoState.featureSpec
-        ? sessionInputFromSpec(repoState.featureSpec)
-        : INITIAL_SESSION;
       const history = await loadHistory(trimmedRepoPath);
 
       setState((current) => ({
         ...current,
-        screen: "session",
+        screen: targetScreen,
         repoPath: trimmedRepoPath,
-        session: hydratedSession,
+        session: INITIAL_SESSION,
         featureSpec: repoState.featureSpec,
         currentSession: repoState.session,
         report: repoState.latestReport,
@@ -208,6 +208,17 @@ function App() {
     }
   };
 
+  const handleOpenProjectForPro = async () => {
+    try {
+      const selected = await open({ directory: true, multiple: false });
+      if (typeof selected === "string") {
+        await openRepo(selected, "pro");
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const runCheck = async (navigateToResults: boolean) => {
     const trimmedRepoPath = state.repoPath.trim();
     const featureSpec = buildFeatureSpec(state.session, state.featureSpec);
@@ -233,6 +244,7 @@ function App() {
           testCommand: trimmedTestCommand || null,
           testCommandCwd: trimmedTestCommandCwd || null,
         },
+        authToken,
       );
 
       let currentSession = repoState.session;
@@ -253,6 +265,7 @@ function App() {
       setState((current) => ({
         ...current,
         repoPath: trimmedRepoPath,
+        session: INITIAL_SESSION,
         featureSpec,
         currentSession,
         report,
@@ -355,6 +368,36 @@ function App() {
     }
   };
 
+  const handleDeleteAllReports = async () => {
+    if (!reportBrowserProject) return;
+    setIsBusy(true);
+    setError(null);
+    try {
+      for (const entry of reportBrowserEntries) {
+        await deleteReport(reportBrowserProject.repoPath, entry.path);
+      }
+      const repoState = await initRepoStorage(reportBrowserProject.repoPath);
+      setReportBrowserEntries([]);
+      rememberRepo(reportBrowserProject.repoPath, repoState.session);
+      setReportBrowserProject((current) =>
+        current
+          ? {
+              ...current,
+              latestVerdict: repoState.session.latestReportVerdict as RecentProjectEntry["latestVerdict"],
+              latestReportPath: repoState.session.latestReportPath,
+              reportHistoryCount: repoState.session.reportHistoryCount,
+              lastCheckedAt: repoState.session.lastReadinessRunAt,
+              lastOpenedAt: repoState.session.lastAccessedAt,
+            }
+          : current,
+      );
+    } catch (deleteError) {
+      setError(errorMessage(deleteError, "Failed to delete reports."));
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
   const handleSignIn = async () => {
     await openSignIn();
     // The browser flow completes out-of-process, so poll briefly for the newly
@@ -373,6 +416,19 @@ function App() {
   const handleSignOut = async () => {
     await clearAuthToken();
     setAuthToken(null);
+    if (state.screen === "pro") {
+      goTo("home");
+    }
+  };
+
+  const handleOpenPro = () => {
+    if (!isSignedIn) {
+      void handleSignIn();
+    } else if (!isPro) {
+      setIsProUpsellOpen(true);
+    } else {
+      goTo("pro");
+    }
   };
 
   const handleSaveSettings = async (javaBinaryOverride: string | null) => {
@@ -393,7 +449,7 @@ function App() {
     setIsGeneratingContext(true);
     setContextForgeError(null);
     try {
-      const token = await getValidToken();
+      const token = await getValidToken(authToken);
       const status = await generateContextFiles(state.repoPath, token);
       setContextForgeStatus(status);
     } catch (genError) {
@@ -429,6 +485,7 @@ function App() {
         versionLabel={versionLabel}
         onNavigateHome={handleNavigateHome}
         onNavigateReports={handleBrowseProjectsWithReports}
+        onOpenPro={handleOpenPro}
         onOpenHelp={() => setIsHelpOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onSignIn={() => void handleSignIn()}
@@ -444,13 +501,7 @@ function App() {
             isPro={isPro}
             onOpenProject={handleOpenProject}
             onBrowseHistory={handleBrowseProjectsWithReports}
-            onOpenPro={() => {
-              if (isSignedIn) {
-                setIsSettingsOpen(true);
-              } else {
-                void handleSignIn();
-              }
-            }}
+            onOpenPro={handleOpenPro}
             onOpenRecentProject={(repoPath) => void openRepo(repoPath)}
           />
         )}
@@ -478,6 +529,7 @@ function App() {
               }
             }}
             onDeleteReport={(entry) => void handleDeleteReport(entry)}
+            onDeleteAllReports={() => void handleDeleteAllReports()}
           />
         )}
 
@@ -539,6 +591,21 @@ function App() {
           />
         )}
 
+        {state.screen === "pro" && (
+          <ProView
+            repoPath={state.repoPath}
+            recentProjects={recentProjects}
+            isBusy={isBusy}
+            contextForgeStatus={contextForgeStatus}
+            isGeneratingContext={isGeneratingContext}
+            contextForgeError={contextForgeError}
+            onGenerateContextFiles={() => void handleGenerateContextFiles()}
+            onOpenProject={() => void handleOpenProjectForPro()}
+            onOpenRecentProject={(repoPath) => void openRepo(repoPath, "pro")}
+            onRunCheck={() => goTo("session")}
+          />
+        )}
+
         {state.screen === "results" && state.report && (
           <ResultsView
             repoPath={state.repoPath}
@@ -549,6 +616,7 @@ function App() {
             isRunning={isRunning}
             error={error}
             authToken={authToken}
+            isPro={isPro}
             onBack={() => {
               setError(null);
               goTo(resultsBackTarget);
@@ -559,6 +627,14 @@ function App() {
       </main>
 
       {isHelpOpen && <HelpModal onClose={() => setIsHelpOpen(false)} />}
+
+      {isProUpsellOpen && (
+        <ProUpsellModal
+          isSignedIn={isSignedIn}
+          onClose={() => setIsProUpsellOpen(false)}
+          onSignIn={() => void handleSignIn()}
+        />
+      )}
 
       {isSettingsOpen && (
         <SettingsModal
